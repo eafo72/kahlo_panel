@@ -4,6 +4,9 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Flatpickr from 'react-flatpickr';
 import { Spanish } from 'flatpickr/dist/l10n/es.js';
+import QRCode from 'react-qr-code';
+import jsPDF from 'jspdf';
+import qrcode from 'qrcode';
 
 //import 'flatpickr/dist/themes/material_red.css';
 
@@ -27,8 +30,257 @@ const VentasPage = () => {
         password: '',
     });
     const [isLogin, setIsLogin] = useState(false);
+    const [showQR, setShowQR] = useState(false);
+    const [reservationId, setReservationId] = useState(null);
 
     const tourId = 24;
+
+
+    // Función para generar PDF con información de compra
+    const generatePDF = async (reservationData) => {
+        try {
+            const {
+                tourData,
+                selectedDate,
+                selectedTime,
+                ticketQuantities,
+                contactInfo,
+                reservationId
+            } = reservationData;
+
+            // Crear PDF directamente con jsPDF
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 20;
+            let yPosition = margin;
+
+            // Función helper para agregar texto centrado
+            const addCenteredText = (text, y, size = 12, isBold = false) => {
+                pdf.setFontSize(size);
+                if (isBold) pdf.setFont('helvetica', 'bold');
+                const textWidth = pdf.getTextWidth(text);
+                const x = (pageWidth - textWidth) / 2;
+                pdf.text(text, x, y);
+                if (isBold) pdf.setFont('helvetica', 'normal');
+            };
+
+            // Función helper para agregar texto justificado a la izquierda
+            const addLeftText = (text, y, size = 10) => {
+                pdf.setFontSize(size);
+                pdf.text(text, margin, y);
+            };
+
+            // Título principal
+            addCenteredText(tourData?.nombre || 'Museo de Desarrollo', yPosition, 20, true);
+            yPosition += 10;
+            addCenteredText('Comprobante de Compra', yPosition, 16, true);
+            yPosition += 20;
+
+            // Información de la reservación
+            addCenteredText('Información de la Reservación', yPosition, 14, true);
+            yPosition += 10;
+
+            const infoData = [
+                ['ID de Reservación:', reservationId.toString()],
+                ['Fecha:', selectedDate?.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) || ''],
+                ['Horario:', selectedTime || ''],
+                ['Visitantes:', `${Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0)} personas`]
+            ];
+
+            infoData.forEach(([label, value]) => {
+                addLeftText(`${label} ${value}`, yPosition);
+                yPosition += 6;
+            });
+
+            yPosition += 5;
+
+            // Generar código QR
+            try {
+                const qrDataURL = await qrcode.toDataURL(reservationId.toString(), {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                });
+
+                console.log('QR generado correctamente');
+
+                // Convertir dataURL a imagen y agregar al PDF
+                const qrImage = new Image();
+                qrImage.onload = () => {
+                    try {
+                        // Crear un canvas temporal para convertir la imagen
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 300;
+                        canvas.height = 300;
+
+                        // Dibujar la imagen QR en el canvas
+                        ctx.drawImage(qrImage, 0, 0, 300, 300);
+
+                        // Convertir canvas a imagen para jsPDF
+                        const qrImageData = canvas.toDataURL('image/png');
+
+                        // Calcular posición para centrar el QR
+                        const qrSize = 40; // mm
+                        const qrX = (pageWidth - qrSize) / 2;
+
+                        // Agregar el QR al PDF
+                        pdf.addImage(qrImageData, 'PNG', qrX, yPosition, qrSize, qrSize);
+
+                        yPosition += qrSize + 10;
+
+                        // Continuar agregando el resto del contenido después del QR
+                        addPDFContent();
+
+                    } catch (qrError) {
+                        console.error('Error agregando QR al PDF:', qrError);
+                        // Continuar sin QR
+                        addPDFContent();
+                    }
+                };
+
+                qrImage.onerror = () => {
+                    console.error('Error cargando imagen QR');
+                    // Continuar sin QR
+                    addPDFContent();
+                };
+
+                qrImage.src = qrDataURL;
+
+            } catch (qrGenError) {
+                console.error('Error generando QR:', qrGenError);
+                // Continuar sin QR
+                addPDFContent();
+            }
+
+            // Función para agregar el resto del contenido del PDF
+            const addPDFContent = () => {
+                try {
+                    // Detalle de boletos
+                    addCenteredText('Detalle de Boletos', yPosition, 14, true);
+                    yPosition += 10;
+
+                    // Headers de tabla
+                    const colWidths = [60, 25, 30, 35];
+                    const headers = ['Tipo', 'Cant.', 'Precio Unit.', 'Subtotal'];
+                    let xPos = margin;
+
+                    pdf.setFontSize(10);
+                    pdf.setFont('helvetica', 'bold');
+                    headers.forEach((header, i) => {
+                        pdf.text(header, xPos, yPosition);
+                        xPos += colWidths[i];
+                    });
+
+                    yPosition += 8;
+
+                    // Datos de boletos
+                    pdf.setFont('helvetica', 'normal');
+
+                    if (ticketQuantities.entradaTipoA > 0) {
+                        xPos = margin;
+                        pdf.text('Entrada General', xPos, yPosition);
+                        xPos += colWidths[0];
+                        pdf.text(ticketQuantities.entradaTipoA.toString(), xPos, yPosition);
+                        xPos += colWidths[1];
+                        pdf.text('$270.00', xPos, yPosition);
+                        xPos += colWidths[2];
+                        pdf.text(`$${(ticketQuantities.entradaTipoA * 270).toLocaleString('es-MX')}`, xPos, yPosition);
+                        yPosition += 6;
+                    }
+
+                    if (ticketQuantities.entradaTipoB > 0) {
+                        xPos = margin;
+                        pdf.text('Ciudadano Mexicano', xPos, yPosition);
+                        xPos += colWidths[0];
+                        pdf.text(ticketQuantities.entradaTipoB.toString(), xPos, yPosition);
+                        xPos += colWidths[1];
+                        pdf.text('$130.00', xPos, yPosition);
+                        xPos += colWidths[2];
+                        pdf.text(`$${(ticketQuantities.entradaTipoB * 130).toLocaleString('es-MX')}`, xPos, yPosition);
+                        yPosition += 6;
+                    }
+
+                    if (ticketQuantities.entradaTipoC > 0) {
+                        xPos = margin;
+                        pdf.text('Estudiante / Adulto Mayor / Niño', xPos, yPosition);
+                        xPos += colWidths[0];
+                        pdf.text(ticketQuantities.entradaTipoC.toString(), xPos, yPosition);
+                        xPos += colWidths[1];
+                        pdf.text('$65.00', xPos, yPosition);
+                        xPos += colWidths[2];
+                        pdf.text(`$${(ticketQuantities.entradaTipoC * 65).toLocaleString('es-MX')}`, xPos, yPosition);
+                        yPosition += 8;
+                    }
+
+                    // Línea separadora
+                    pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+                    yPosition += 8;
+
+                    // Total
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(12);
+                    xPos = pageWidth - margin - pdf.getTextWidth(`$${((ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`);
+                    pdf.text('TOTAL:', pageWidth - margin - 60, yPosition);
+                    pdf.text(`$${((ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`, xPos, yPosition);
+
+                    yPosition += 15;
+
+                    // Información del comprador
+                    addCenteredText('Información del Comprador', yPosition, 14, true);
+                    yPosition += 10;
+
+                    const compradorData = [
+                        [`Nombre: ${contactInfo.nombres} ${contactInfo.apellidos}`],
+                        [`Correo: ${contactInfo.correo}`]
+                    ];
+
+                    if (contactInfo.telefono) {
+                        compradorData.push([`Teléfono: ${contactInfo.telefono}`]);
+                    }
+
+                    compradorData.forEach(([text]) => {
+                        addLeftText(text, yPosition);
+                        yPosition += 6;
+                    });
+
+                    yPosition += 10;
+
+                    // Pie de página
+                    addCenteredText('Presenta este comprobante junto con el código QR en la entrada del museo.', yPosition, 8);
+                    yPosition += 6;
+                    addCenteredText(`Fecha de generación: ${new Date().toLocaleString('es-ES')}`, yPosition, 8);
+
+                    // Descargar PDF
+                    pdf.save(`comprobante-reservacion-${reservationId}.pdf`);
+                    toast.success('PDF generado exitosamente');
+
+                } catch (contentError) {
+                    console.error('Error agregando contenido al PDF:', contentError);
+                    toast.error('Error al generar el PDF');
+                }
+            };
+
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            toast.error('Error al generar el PDF');
+        }
+    };
 
 
     // Fetch Tour Data on component mount
@@ -163,10 +415,9 @@ const VentasPage = () => {
 
             if (response.data && response.data.id_reservacion) {
                 toast.success(`Transacción aprobada. ID Reservación: ${response.data.id_reservacion}`);
-                // Refrescar la página después de 2 segundos para permitir nueva compra
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                // Mostrar código QR con el ID de reservación
+                setReservationId(response.data.id_reservacion);
+                setShowQR(true);
             } else {
                 throw new Error('No se recibió un ID de reservación válido');
             }
@@ -218,76 +469,162 @@ const VentasPage = () => {
         <>
             <ToastContainer />
 
-
-            <main className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
-                <div className="max-w-4xl mx-auto">
-                    <div className="card rounded-lg bg-white dark:bg-slate-800 shadow-base border border-slate-200 dark:border-slate-700">
-                        <div className="card-header border-b border-slate-200 dark:border-slate-700">
-                            <h5 className="card-title text-slate-900 dark:text-white">
-                                {tourData ? `Compra de Boletos: ${tourData.nombre}` : 'Cargando...'}
-                            </h5>
-                        </div>
-                        <div className="card-body p-6">
-                            <div className="flex justify-center items-center gap-4 my-6">
-                                {['Fecha', 'Boletos', 'Datos', 'Resumen'].map((label, index) => (
-                                    <div key={index} className="flex items-center">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                                            currentStep > index + 1 ? 'bg-primary-500 text-white' :
-                                            currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
-                                        }`}>
-                                            {index + 1}
-                                        </div>
-                                        <span className={`ml-2 text-sm font-medium ${
-                                            currentStep >= index + 1 ? 'text-primary-600' : 'text-slate-500'
-                                        }`}>
-                                            {label}
-                                        </span>
-                                    </div>
-                                ))}
+            {!showQR ? (
+                <main className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="card rounded-lg bg-white dark:bg-slate-800 shadow-base border border-slate-200 dark:border-slate-700">
+                            <div className="card-header border-b border-slate-200 dark:border-slate-700">
+                                <h5 className="card-title text-slate-900 dark:text-white">
+                                    {tourData ? `Compra de Boletos: ${tourData.nombre}` : 'Cargando...'}
+                                </h5>
                             </div>
-
-                            <form id="ticket-form" onSubmit={(e) => e.preventDefault()}>
-                                {renderStep()}
-                                <div className="card-footer border-t border-slate-200 dark:border-slate-700 pt-6">
-                                    <div className="flex justify-end gap-3">
-                                        {currentStep > 1 && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={prevStep}
-                                            >
-                                                ← Atrás
-                                            </button>
-                                        )}
-                                        {currentStep < 4 && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-primary"
-                                                onClick={nextStep}
-                                            >
-                                                Siguiente →
-                                            </button>
-                                        )}
-                                        {currentStep === 4 && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-success"
-                                                id="btn-pagar"
-                                                onClick={handlePayment}
-                                            >
-                                                Pagar
-                                            </button>
-                                        )}
-                                    </div>
+                            <div className="card-body p-6">
+                                <div className="flex justify-center items-center gap-4 my-6">
+                                    {['Fecha', 'Boletos', 'Datos', 'Resumen'].map((label, index) => (
+                                        <div key={index} className="flex items-center">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                                                currentStep > index + 1 ? 'bg-primary-500 text-white' :
+                                                currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
+                                            }`}>
+                                                {index + 1}
+                                            </div>
+                                            <span className={`ml-2 text-sm font-medium ${
+                                                currentStep >= index + 1 ? 'text-primary-600' : 'text-slate-500'
+                                            }`}>
+                                                {label}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
-                            </form>
+
+                                <form id="ticket-form" onSubmit={(e) => e.preventDefault()}>
+                                    {renderStep()}
+                                    <div className="card-footer border-t border-slate-200 dark:border-slate-700 pt-6">
+                                        <div className="flex justify-end gap-3">
+                                            {currentStep > 1 && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary"
+                                                    onClick={prevStep}
+                                                >
+                                                    ← Atrás
+                                                </button>
+                                            )}
+                                            {currentStep < 4 && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary"
+                                                    onClick={nextStep}
+                                                >
+                                                    Siguiente →
+                                                </button>
+                                            )}
+                                            {currentStep === 4 && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-success"
+                                                    id="btn-pagar"
+                                                    onClick={handlePayment}
+                                                >
+                                                    Pagar
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            ) : (
+                <main className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="card rounded-lg bg-white dark:bg-slate-800 shadow-base border border-slate-200 dark:border-slate-700">
+                            <div className="card-body p-8 text-center">
+                                <div className="mb-6">
+                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                                        ¡Compra Exitosa!
+                                    </h3>
+                                    <p className="text-slate-600 dark:text-slate-300">
+                                        Tu reservación ha sido procesada correctamente
+                                    </p>
+                                </div>
 
+                                <div className="mb-8">
+                                    <div className="bg-white dark:bg-slate-700 p-6 rounded-lg  inline-block">
+                                        <QRCode
+                                            value={reservationId.toString()}
+                                            size={200}
+                                            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        />
+                                    </div>
+                                </div>
 
+                                <div className="mb-6">
+                                    <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                        ID de Reservación
+                                    </p>
+                                    <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                                        {reservationId}
+                                    </p>
+                                </div>
 
+                                <div className="space-y-3">
+                                    <p className="text-slate-600 dark:text-slate-300">
+                                        Presenta este código QR en la entrada del museo junto con tu identificación.
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            onClick={() => {
+                                                setShowQR(false);
+                                                setReservationId(null);
+                                                // Reset form for new purchase
+                                                setCurrentStep(1);
+                                                setSelectedDate(null);
+                                                setTicketQuantities({
+                                                    entradaTipoA: 0,
+                                                    entradaTipoB: 0,
+                                                    entradaTipoC: 0,
+                                                });
+                                                setSelectedTime('');
+                                                setContactInfo({
+                                                    nombres: '',
+                                                    apellidos: '',
+                                                    telefono: '',
+                                                    correo: '',
+                                                    password: '',
+                                                });
+                                            }}
+                                        >
+                                            Hacer Nueva Compra
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => {
+                                                // Generar PDF con información de compra
+                                                const reservationData = {
+                                                    tourData,
+                                                    selectedDate,
+                                                    selectedTime,
+                                                    ticketQuantities,
+                                                    contactInfo,
+                                                    reservationId
+                                                };
+                                                generatePDF(reservationData);
+                                            }}
+                                        >
+                                            Generar PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            )}
         </>
     );
 };
@@ -315,11 +652,27 @@ const Step1 = ({ selectedDate, setSelectedDate, tourData }) => {
             <div className="card border border-slate-200 dark:border-slate-700 rounded-lg">
                 <div className="card-body p-6">
                     <div className="flex flex-col items-center text-center">
-                        <Flatpickr
-                            value={selectedDate}
-                            onChange={([date]) => setSelectedDate(date)}
-                            options={calendarOptions}
-                        />
+                        <div className="flatpickr-wrapper">
+                            <Flatpickr
+                                value={selectedDate}
+                                onChange={([date]) => setSelectedDate(date)}
+                                options={calendarOptions}
+                            />
+                        </div>
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                                .flatpickr-wrapper .flatpickr-input {
+                                    display: none !important;
+                                    opacity: 0 !important;
+                                    position: absolute !important;
+                                    z-index: -9999 !important;
+                                    pointer-events: none !important;
+                                    width: 0 !important;
+                                    height: 0 !important;
+                                    overflow: hidden !important;
+                                }
+                            `
+                        }} />
                         <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg min-h-[60px] flex items-center justify-center">
                             <p className="text-slate-700 dark:text-slate-300 font-medium">
                                 {selectedDate ? `Seleccionaste: ${selectedDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : 'Selecciona una fecha para ver los detalles'}
@@ -501,7 +854,7 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
 
 // Step 4: Summary
 const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contactInfo, totalVisitantes }) => {
-    const total = (ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65);
+    const totalAmount = (ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65);
 
     return (
         <div className="space-y-6">
@@ -534,7 +887,7 @@ const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contact
                     <div className="border-2 border-primary-500 dark:border-primary-400 rounded-lg p-6 bg-primary-50 dark:bg-primary-900/20">
                         <div className="text-center">
                             <h5 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Total a Pagar</h5>
-                            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">${total.toLocaleString('es-MX')} MXN</p>
+                            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">${totalAmount.toLocaleString('es-MX')} MXN</p>
                         </div>
                     </div>
                 </div>
