@@ -19,12 +19,11 @@ import { UserContext } from "../../pages/context/userContext";
 import { downloadExcel } from "react-export-table-to-excel";
 
 
-
 const Historial = () => {
   const COLUMNS = [
     {
       Header: "Tour",
-      accessor: "nombreTour",
+      accessor: "nombre_del_tour",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
       },
@@ -37,8 +36,15 @@ const Historial = () => {
       },
     },
     {
-      Header: "Tipos de Boleto",
-      accessor: "tipos_boletos",
+      Header: "Nombre Visitante",
+      accessor: "nombre_visitante",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Correo",
+      accessor: "correo",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
       },
@@ -66,10 +72,35 @@ const Historial = () => {
       },
     },
     {
-      Header: "Correo",
-      accessor: "correo",
+      Header: "Total tipo A",
+      accessor: "total_tipo_A",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Total tipo B",
+      accessor: "total_tipo_B",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Total tipo C",
+      accessor: "total_tipo_C",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Fecha Salida",
+      accessor: "fecha_ida",
+      Cell: (row) => {
+        return (
+          <span>
+            {row?.cell?.value}
+          </span>
+        );
       },
     },
     {
@@ -78,32 +109,49 @@ const Historial = () => {
       Cell: (row) => {
         return (
           <span>
-            {row.cell.value? row?.cell?.value.replace("T", " ").replace("Z", "").replace(".000", ""):""}
+            {row?.cell?.value}
           </span>
         );
       },
     },
     {
-      Header: "Fecha Ida",
-      accessor: "fecha_ida",
-      Cell: (row) => {
-        return (
-          <span>
-            {row.cell.value?row?.cell?.value.replace("T", " ").replace("Z", "").replace(".000", ""):""}
-          </span>
-        );
-      },
-    },
-
-    {
-      Header: "Total",
-      accessor: "total",
+      Header: "Total de Compra",
+      accessor: "total_de_compra",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
       },
       Footer: (info) => {
-        const total = info.rows.reduce((sum, row) => sum + Number(row.values.total), 0);
+        const total = info.rows.reduce((sum, row) => sum + Number(row.values.total_de_compra), 0);
         return <strong>Total: {total}</strong>;
+      },
+    },
+    {
+      Header: "Tipo Compra",
+      accessor: "tipo_compra",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Cobrado Efectivo",
+      accessor: "cobrado_efectivo",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+      Footer: (info) => {
+        const total_efectivo = info.rows.reduce((sum, row) => sum + Number(row.values.cobrado_efectivo), 0);
+        return <strong>Total: {total_efectivo}</strong>;
+      },
+    },
+    {
+      Header: "Cobrado Stripe",
+      accessor: "cobrado_stripe",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+      Footer: (info) => {
+        const total_stripe = info.rows.reduce((sum, row) => sum + Number(row.values.cobrado_stripe), 0);
+        return <strong>Total: {total_stripe}</strong>;
       },
     },
     
@@ -177,26 +225,40 @@ const Historial = () => {
   const header = [
     "Tour",
     "Id Reservación",
+    "Nombre Visitante",
+    "Correo",
     "No.Boletos",
     "Checkin",
+    "Total tipo A",
+    "Total tipo B",
+    "Total tipo C",
+    "Fecha Salida",
     "Fecha Compra",
-    "Fecha Ida",
-    "Total",
-    "Status"
+    "Total de Compra",
+    "Tipo Compra",
+    "Cobrado Efectivo",
+    "Cobrado Stripe"
   ];
 
   function handleDownloadExcel() {
     let newDatos = [];
     for (let i = 0; i < datos.length; i++) {
       newDatos.push({
-        "nombreTour": datos[i]['nombreTour'],
+        "nombre_del_tour": datos[i]['nombre_del_tour'],
         "id_reservacion": datos[i]['id_reservacion'],
+        "nombre_visitante": datos[i]['nombre_visitante'],
+        "correo": datos[i]['correo'],
         "no_boletos": datos[i]['no_boletos'],
         "checkin": datos[i]['checkin'],
-        "fecha_compra": datos[i]['fecha_compra'],
+        "total_tipo_A": datos[i]['total_tipo_A'],
+        "total_tipo_B": datos[i]['total_tipo_B'],
+        "total_tipo_C": datos[i]['total_tipo_C'],
         "fecha_ida": datos[i]['fecha_ida'],
-        "total": datos[i]['total'],
-        "status_viaje": datos[i]['status_viaje'],
+        "fecha_compra": datos[i]['fecha_compra'],
+        "total_de_compra": datos[i]['total_de_compra'],
+        "tipo_compra": datos[i]['tipo_compra'],
+        "cobrado_efectivo": datos[i]['cobrado_efectivo'],
+        "cobrado_stripe": datos[i]['cobrado_stripe'],
       })
     }
 
@@ -214,26 +276,51 @@ const applyDateFilter = () => {
   const filtered = datosOriginales.filter((row) => {
     let valid = true;
 
+    // Función para extraer la parte de la fecha (YYYY-MM-DD) del timestamp
+    const getDatePart = (dateTimeStr) => {
+      if (!dateTimeStr) return null;
+      // Si ya es solo la fecha, retornar tal cual
+      if (dateTimeStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateTimeStr;
+      // Si incluye espacio, tomar la parte de la fecha
+      if (dateTimeStr.includes(' ')) return dateTimeStr.split(' ')[0];
+      // Si es formato ISO (con T), tomar la parte de la fecha
+      if (dateTimeStr.includes('T')) return dateTimeStr.split('T')[0];
+      return dateTimeStr;
+    };
+
     // Filtrar por fecha ida
     if (fechaInicioIda || fechaFinIda) {
-      if (!row.fecha_ida) valid = false;
-      else {
-        const fechaStr = row.fecha_ida.split("T")[0];
+      if (!row.fecha_ida) {
+        valid = false;
+      } else {
+        const fechaStr = getDatePart(row.fecha_ida);
         const start = fechaInicioIda || "1900-01-01";
         const end = fechaFinIda || "2100-12-31";
-        if (fechaStr < start || fechaStr > end) valid = false;
+        
+        if (!fechaStr || fechaStr < start || fechaStr > end) {
+          valid = false;
+        }
       }
     }
 
     // Filtrar por fecha compra
     if (fechaInicioCompra || fechaFinCompra) {
-      if (!row.fecha_compra) valid = false;
-      else {
-        const fechaStr = row.fecha_compra.split("T")[0];
+      if (!row.fecha_compra) {
+        valid = false;
+      } else {
+        const fechaStr = getDatePart(row.fecha_compra);
         const start = fechaInicioCompra || "1900-01-01";
         const end = fechaFinCompra || "2100-12-31";
-        if (fechaStr < start || fechaStr > end) valid = false;
+        
+        if (!fechaStr || fechaStr < start || fechaStr > end) {
+          valid = false;
+        }
       }
+    }
+
+    // Si no hay filtros aplicados, mostrar todos los datos
+    if (!fechaInicioIda && !fechaFinIda && !fechaInicioCompra && !fechaFinCompra) {
+      valid = true;
     }
 
     return valid;
@@ -242,6 +329,14 @@ const applyDateFilter = () => {
   setDatos(filtered);
   gotoPage(0);
 };
+
+// Aplicar filtros cuando se cargan datos iniciales
+useEffect(() => {
+  if (datosOriginales.length > 0) {
+    // No aplicar filtros automáticamente al cargar
+    // Los filtros se aplicarán cuando el usuario haga clic en el botón
+  }
+}, [datosOriginales]);
 
   const handleAlta = () => {
     //navigate("/guias/alta");

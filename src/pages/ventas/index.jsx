@@ -32,6 +32,8 @@ const VentasPage = () => {
     const [isLogin, setIsLogin] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [reservationId, setReservationId] = useState(null);
+    const [clientExist, setClientExist] = useState(null);
+
 
     const tourId = 24;
 
@@ -381,7 +383,7 @@ const VentasPage = () => {
                 return;
             }
 
-           
+
             console.log('Preparando datos para pago:', {
                 tourId,
                 fecha,
@@ -417,6 +419,7 @@ const VentasPage = () => {
                 toast.success(`Transacción aprobada. ID Reservación: ${response.data.id_reservacion}`);
                 // Mostrar código QR con el ID de reservación
                 setReservationId(response.data.id_reservacion);
+                setClientExist(response.data.clienteExiste);
                 setShowQR(true);
             } else {
                 throw new Error('No se recibió un ID de reservación válido');
@@ -424,7 +427,7 @@ const VentasPage = () => {
 
         } catch (error) {
             console.error('Error al procesar el pago:', error);
-             const errorMessage = error.response?.data?.msg || 'Error al procesar el pago. Por favor, intenta nuevamente.';
+            const errorMessage = error.response?.data?.msg || 'Error al procesar el pago. Por favor, intenta nuevamente.';
             toast.error(errorMessage);
         } finally {
             setPaymentData(prev => ({ ...prev, isProcessing: false }));
@@ -482,15 +485,13 @@ const VentasPage = () => {
                                 <div className="flex justify-center items-center gap-4 my-6">
                                     {['Fecha', 'Boletos', 'Datos', 'Resumen'].map((label, index) => (
                                         <div key={index} className="flex items-center">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                                                currentStep > index + 1 ? 'bg-primary-500 text-white' :
-                                                currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
-                                            }`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > index + 1 ? 'bg-primary-500 text-white' :
+                                                    currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
+                                                }`}>
                                                 {index + 1}
                                             </div>
-                                            <span className={`ml-2 text-sm font-medium ${
-                                                currentStep >= index + 1 ? 'text-primary-600' : 'text-slate-500'
-                                            }`}>
+                                            <span className={`ml-2 text-sm font-medium ${currentStep >= index + 1 ? 'text-primary-600' : 'text-slate-500'
+                                                }`}>
                                                 {label}
                                             </span>
                                         </div>
@@ -567,6 +568,15 @@ const VentasPage = () => {
                                     <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                                         {reservationId}
                                     </p>
+                                    {clientExist ? (
+                                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                                            El cliente ya existía en la base de datos
+                                        </p>
+                                    ) : (
+                                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                                            El cliente fue dado de alta
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-3">
