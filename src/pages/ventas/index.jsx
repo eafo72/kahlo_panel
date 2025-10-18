@@ -358,7 +358,7 @@ const VentasPage = () => {
         });
     };
 
-    const handlePayment = async () => {
+    const handlePayment = async (type = 'venta') => {
         try {
             // Recolectar datos del formulario
             const fecha = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
@@ -397,7 +397,13 @@ const VentasPage = () => {
             });
 
             // Realizar la solicitud de creación de venta
-            const response = await clienteAxios.post(`/venta/crear-admin`, {
+            let endpoint = null;
+            if(type == 'cortesia'){
+                endpoint = '/venta/crear-admin-cortesia';
+            }else{
+                endpoint = '/venta/crear-admin';
+            }
+            const response = await clienteAxios.post(endpoint, {
                 "no_boletos": parseInt(visitantes),
                 "tipos_boletos": tipos_boletos,
                 "pagado": 1,
@@ -521,14 +527,24 @@ const VentasPage = () => {
                                                 </button>
                                             )}
                                             {currentStep === 4 && (
+                                                <>
                                                 <button
                                                     type="button"
                                                     className="btn btn-success"
                                                     id="btn-pagar"
-                                                    onClick={handlePayment}
+                                                    onClick={() => handlePayment()}
                                                 >
                                                     Pagar
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-success"
+                                                    id="btn-cortesia"
+                                                    onClick={() => handlePayment('cortesia')}
+                                                >
+                                                    Cortesía
+                                                </button>
+                                                </>
                                             )}
                                         </div>
                                     </div>
