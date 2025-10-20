@@ -33,7 +33,7 @@ const VentasPage = () => {
     const [showQR, setShowQR] = useState(false);
     const [reservationId, setReservationId] = useState(null);
     const [clientExist, setClientExist] = useState(null);
-
+    const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
 
     const tourId = 24;
 
@@ -360,6 +360,9 @@ const VentasPage = () => {
 
     const handlePayment = async (type = 'venta') => {
         try {
+            // Deshabilitar botones
+            setIsPaymentInProgress(true);
+            
             // Recolectar datos del formulario
             const fecha = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
             const horario = selectedTime;
@@ -436,7 +439,7 @@ const VentasPage = () => {
             const errorMessage = error.response?.data?.msg || 'Error al procesar el pago. Por favor, intenta nuevamente.';
             toast.error(errorMessage);
         } finally {
-            setPaymentData(prev => ({ ...prev, isProcessing: false }));
+            setIsPaymentInProgress(false);
         }
     };
 
@@ -530,19 +533,21 @@ const VentasPage = () => {
                                                 <>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-success"
+                                                    className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
                                                     id="btn-pagar"
                                                     onClick={() => handlePayment()}
+                                                    disabled={isPaymentInProgress}
                                                 >
-                                                    Pagar
+                                                    {isPaymentInProgress ? 'Procesando...' : 'Pagar'}
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-success"
+                                                    className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
                                                     id="btn-cortesia"
                                                     onClick={() => handlePayment('cortesia')}
+                                                    disabled={isPaymentInProgress}
                                                 >
-                                                    Cortesía
+                                                    {isPaymentInProgress ? 'Procesando...' : 'Cortesía'}
                                                 </button>
                                                 </>
                                             )}
