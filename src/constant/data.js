@@ -59,6 +59,11 @@ export const menuItems = [
         childlink: "reservaciones/cancelar",
         childicon: "heroicons:presentation-chart-line",
       },
+      {
+        childtitle: "Imprimir Ticket",
+        childlink: "reservaciones/imprimir",
+        childicon: "heroicons:presentation-chart-line",
+      },
     ]
 
   },
@@ -116,6 +121,11 @@ export const menuItemsAdministrador = [
         childlink: "reservaciones/cancelar",
         childicon: "heroicons:presentation-chart-line",
       },
+      {
+        childtitle: "Imprimir Ticket",
+        childlink: "reservaciones/imprimir",
+        childicon: "heroicons:presentation-chart-line",
+      },
     ]
 
   },
@@ -170,6 +180,11 @@ export const menuItemsGuia = [
       {
         childtitle: "Cancelar",
         childlink: "reservaciones/cancelar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+      {
+        childtitle: "Imprimir Ticket",
+        childlink: "reservaciones/imprimir",
         childicon: "heroicons:presentation-chart-line",
       },
     ]

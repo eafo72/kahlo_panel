@@ -67,6 +67,7 @@ const Ventas = lazy(() => import("./pages/ventas"));
 
 const ReservacionesModificar = lazy(() => import("./pages/reservaciones/modificar"));
 const ReservacionesCancelar = lazy(() => import("./pages/reservaciones/cancelar"));
+const ReservacionesImprimir = lazy(() => import("./pages/reservaciones/imprimir"));
 
 const NoPage = lazy(() => import("./pages/404"));
 import Loading from "@/components/Loading";
@@ -155,6 +156,7 @@ function App() {
 
           <Route path="reservaciones/modificar" element={<ReservacionesModificar />} />
           <Route path="reservaciones/cancelar" element={<ReservacionesCancelar />} />
+          <Route path="reservaciones/imprimir" element={<ReservacionesImprimir />} />
 
           <Route path="*" element={<Navigate to="/404" />} />
         </Route>
