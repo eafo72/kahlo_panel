@@ -45,6 +45,24 @@ export const menuItems = [
     link: "tours",
   },
   {
+    title: "Reservaciones",
+    icon: "heroicons-outline:home",
+    link: "reservaciones",
+    child: [
+      {
+        childtitle: "Modificar",
+        childlink: "reservaciones/modificar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+      {
+        childtitle: "Cancelar",
+        childlink: "reservaciones/cancelar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+    ]
+
+  },
+  {
     title: "Historial",
     icon: "heroicons:table-cells",
     link: "historial",
@@ -84,6 +102,24 @@ export const menuItemsAdministrador = [
     link: "tours",
   },
   {
+    title: "Reservaciones",
+    icon: "heroicons-outline:home",
+    link: "reservaciones",
+    child: [
+      {
+        childtitle: "Modificar",
+        childlink: "reservaciones/modificar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+      {
+        childtitle: "Cancelar",
+        childlink: "reservaciones/cancelar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+    ]
+
+  },
+  {
     title: "Guias",
     icon: "heroicons:identification",
     link: "guias",
@@ -104,16 +140,16 @@ export const menuItemsAdministrador = [
     icon: "heroicons:banknotes",
     link: "ventas",
   },
-  
+
   {
     title: "Comentarios",
     icon: "heroicons:chat-bubble-left-right",
     link: "comentarios",
   },
 
-  
-  
-  
+
+
+
 ];
 
 export const menuItemsGuia = [
@@ -121,13 +157,35 @@ export const menuItemsGuia = [
     isHeadr: true,
     title: "menu",
   },
+  {
+    title: "Reservaciones",
+    icon: "heroicons-outline:home",
+    link: "reservaciones",
+    child: [
+      {
+        childtitle: "Modificar",
+        childlink: "reservaciones/modificar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+      {
+        childtitle: "Cancelar",
+        childlink: "reservaciones/cancelar",
+        childicon: "heroicons:presentation-chart-line",
+      },
+    ]
 
+  },
+  {
+    title: "Historial",
+    icon: "heroicons:table-cells",
+    link: "historial",
+  },
   {
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
     link: "ventas",
   },
-  
+
 ];
 
 export const topMenu = [

@@ -65,6 +65,9 @@ const FotografiasAlta = lazy(() => import("./pages/fotografias/alta"));
 
 const Ventas = lazy(() => import("./pages/ventas"));
 
+const ReservacionesModificar = lazy(() => import("./pages/reservaciones/modificar"));
+const ReservacionesCancelar = lazy(() => import("./pages/reservaciones/cancelar"));
+
 const NoPage = lazy(() => import("./pages/404"));
 import Loading from "@/components/Loading";
 
@@ -149,6 +152,9 @@ function App() {
           <Route path="fotografias/alta" element={<FotografiasAlta />} />
 
           <Route path="ventas" element={<Ventas />} />
+
+          <Route path="reservaciones/modificar" element={<ReservacionesModificar />} />
+          <Route path="reservaciones/cancelar" element={<ReservacionesCancelar />} />
 
           <Route path="*" element={<Navigate to="/404" />} />
         </Route>

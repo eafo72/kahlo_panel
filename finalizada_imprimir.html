@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Museo Casa Kahlo | Compra Exitosa</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <script src="../assets/js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* --- ESTILOS PARA PANTALLA (Proporcional) --- */
+
+/* Vista general */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  color: #000;
+}
+
+/* Contenedor principal del ticket - CENTRADO TOTAL */
+.ticket-section {
+  display: flex;
+  flex-direction: column; /* Asegura que el contenido fluya verticalmente */
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 100px); /* Ajusta para la cabecera/pie */
+  padding: 0;
+  margin: 0;
+}
+
+/* Tarjeta con el contenido del ticket */
+.card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: none;
+  padding: 30px 20px;
+  max-width: 500px; 
+  width: 100%; /* Permite que tome el ancho en pantallas pequeñas */
+  margin: 0 auto;
+  text-align: center;
+  background: #fff;
+}
+
+/* Encabezado */
+.card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+/* Texto general */
+.card p {
+  font-size: 14px;
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+/* Código QR - Tamaño de pantalla */
+#contenedorQR {
+  margin: 15px auto;
+  display: block;
+  width: 100px; /* Reducido a 100px para evitar un QR gigante en pantalla */
+  height: 100px;
+}
+
+#contenedorQR canvas,
+#contenedorQR img {
+  display: block;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto;
+}
+
+/* Contenedor de botones: MÁS CERCA DEL TICKET */
+.btn-actions-container {
+    max-width: 500px; 
+    width: 100%;
+    margin: 20px auto 40px auto !important; /* Margen superior y mucho inferior */
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+/* REGLAS PARA PANTALLA (evita que la imagen de impresión se muestre en el navegador) */
+#contenedorQR img {
+    display: none; 
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA IMPRESIÓN TÉRMICA DE 80MM --- */
+
+@page {
+    margin: 0 !important;
+    size: auto !important; 
+    size: portrait !important; 
+}
+
+@media print {
+    /* 1. Resetear el cuerpo y asegurar la visibilidad del contenido principal */
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+      width: 100%;
+      height: auto !important;
+    }
+
+    /* HACER VISIBLES los contenedores principales */
+    .wrapper,
+    .scroll-content {
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Ocultar elementos no deseados */
+    .fixed-header,
+    .fixed-footer,
+    .btn-actions-container, 
+    .wrapper > .background-fixed, 
+    .d-flex.justify-content-center.gap-2 { 
+      display: none !important;
+    }
+
+    /* 2. Estilos del contenido del ticket (la tarjeta) */
+    .card {
+      box-shadow: none !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
+      background: #fff !important;
+      max-width: none !important;
+    }
+    
+    /* 3. Contenedor principal para forzar el ancho de 80mm */
+    .ticket-content {
+      width: 80mm;
+      max-width: 80mm;
+      padding: 5mm 0; 
+      margin: 0 auto;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+    }
+    
+    /* 4. AUMENTO DE TAMAÑO (aprox. +40%) */
+    
+    /* Encabezado */
+    .ticket-content h2 {
+        font-size: 20pt !important; 
+        margin-bottom: 7px !important;
+    }
+
+    /* Texto general (párrafos) */
+    .ticket-content p {
+        font-size: 13pt !important; 
+        line-height: 1.3;
+        margin-bottom: 4px !important;
+        /* Aseguramos que el texto esté centrado en la impresión */
+        text-align: center !important; 
+    }
+
+    /* Datos del boleto (Nuevos) */
+    .ticket-data {
+        font-size: 13pt !important;
+        margin-bottom: 10px !important;
+        /* Alineación a la izquierda dentro del ticket-content (opcional) */
+        /* text-align: left !important; */
+    }
+
+    .ticket-data strong {
+        font-weight: 700;
+        margin-right: 5px;
+    }
+
+    /* ID de Reserva */
+    .ticket-content p strong {
+        font-size: 18pt !important; 
+        font-weight: 700 !important;
+    }
+    
+    /* Separador (para que se vea más grueso) */
+    p[style*="border-top"] {
+        margin: 15px 0 !important;
+        border-top-width: 2px !important; 
+    }
+
+    /* 5. Ajuste del código QR (Aumento de tamaño) */
+    #contenedorQR {
+        margin: 15px auto;
+        display: block !important;
+        width: 140px; 
+        height: 140px;
+    }
+    
+    /* OCULTAR EL CANVAS EN IMPRESIÓN */
+    #contenedorQR canvas {
+        display: none !important;
+    }
+    
+    /* MOSTRAR Y ESTILIZAR LA IMAGEN DE RESPALDO EN IMPRESIÓN */
+    #contenedorQR img {
+        display: block !important;
+        width: 140px !important; 
+        height: 140px !important;
+        margin: 0 auto !important;
+    }
+}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="background-fixed"></div>
+
+    <header class="fixed-header">
+      <div class="logo-container text-center">
+        <h5 class="pre-title mt-4">Boletaje de</h5>
+        <img src="../assets/img/logo_rojo.png" alt="Museo Casa Kahlo Logo" class="img-fluid brand-logo">
+      </div>
+      <div class="text-section text-center">
+        <p class="subtitle lead">¡Compra Exitosa!</p>
+      </div>
+    </header>
+
+    <main class="scroll-content">
+      <div class="form-container text-center ticket-section">
+        <div class="card p-4 shadow-sm mx-auto">
+            <div class="ticket-content">
+                
+                <h2>¡Compra Exitosa!</h2>
+                
+                <p style="border-top: 1px dashed #333; margin: 10px 0;"></p>
+
+                <p class="ticket-data" id="fechaCompra"><strong>Fecha de Compra:</strong> 20/10/2025</p>
+                <p class="ticket-data" id="tipoBoleto"><strong>Tipo de Boleto:</strong> Acceso General</p>
+                <p class="ticket-data" id="totalPagado"><strong>Total:</strong> $270.00 MXN</p>
+                
+                <p style="border-top: 1px dashed #333; margin: 10px 0;"></p>
+                
+                <p class="ticket-data" id="fechaVisita"><strong>Fecha de Visita:</strong> 22/11/2025</p>
+                <p class="ticket-data" id="horaVisita"><strong>Hora de Visita:</strong> 11:30 AM</p>
+
+                <p style="border-top: 1px dashed #333; margin: 10px 0;"></p>
+
+                <div align="center" id="contenedorQR" style="margin-bottom: 10px;"></div>
+                
+                <p>Presenta este código a tu llegada</p>
+
+                <p style="border-top: 1px dashed #333; margin: 10px 0;"></p>
+
+                <p>Un correo con los detalles de tu compra ha sido enviado.</p>
+                
+                <p>Tu número de reservación es:</p>
+                <p style="font-size: 12pt; font-weight: bold; margin-bottom: 15px;"><strong id="idReserva">---</strong></p>
+                
+                <p style="font-size: 8pt; margin-top: 10px;">¡Gracias por tu compra!</p>
+            </div>
+        </div>
+        <div class="btn-actions-container">
+            <button class="btn btn-danger" onclick="location.href='../index.html'">Inicio</button>
+            <button class="btn btn-outline-secondary" id="btn-imprimir">Imprimir Boleto</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="fixed-footer">
+      <div class="footer-content d-flex justify-content-center flex-wrap gap-4">
+        <p class="mb-0"><a href="#">Aviso de Privacidad</a></p>
+        <p class="mb-0"><a href="#">Términos y Condiciones</a></p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function getUrlParameter(name) {
+      name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+      const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+      const results = regex.exec(location.search);
+      return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    document.addEventListener("DOMContentLoaded", async function() {
+        console.log('Página finalizada cargada');
+        
+        // --- LECTURA DE ID ---
+        let idReservacion = getUrlParameter('id_reservacion'); 
+        
+        if (!idReservacion) {
+            idReservacion = getUrlParameter('session_id'); 
+        }
+
+        if (!idReservacion) {
+            idReservacion = localStorage.getItem('idReservacionFinal');
+        }
+        
+        if (!idReservacion) {
+            idReservacion = 'PRUEBA12345'; // Valor fijo para pruebas
+        }
+        
+        console.log('ID de reservación a usar:', idReservacion);
+
+        // Actualizar el número de reservación en el HTML
+        const idReservaElement = document.getElementById("idReserva");
+        if (idReservaElement) {
+            idReservaElement.innerText = idReservacion;
+        }
+        
+        // Generar QR
+        const contenedorQR = document.getElementById("contenedorQR");
+        if (contenedorQR && idReservacion) {
+            contenedorQR.innerHTML = '';
+            
+             new QRCode(contenedorQR, {
+                text: idReservacion,
+                width: 100, 
+                height: 100,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+    });
+
+    document.getElementById("btn-imprimir").addEventListener("click", function() {
+        window.print();
+    });
+  </script>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>AOS.init();</script>
+</body>
+</html>

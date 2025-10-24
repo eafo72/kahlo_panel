@@ -362,7 +362,7 @@ const VentasPage = () => {
         try {
             // Deshabilitar botones
             setIsPaymentInProgress(true);
-            
+
             // Recolectar datos del formulario
             const fecha = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
             const horario = selectedTime;
@@ -401,9 +401,9 @@ const VentasPage = () => {
 
             // Realizar la solicitud de creación de venta
             let endpoint = null;
-            if(type == 'cortesia'){
+            if (type == 'cortesia') {
                 endpoint = '/venta/crear-admin-cortesia';
-            }else{
+            } else {
                 endpoint = '/venta/crear-admin';
             }
             const response = await clienteAxios.post(endpoint, {
@@ -495,7 +495,7 @@ const VentasPage = () => {
                                     {['Fecha', 'Boletos', 'Datos', 'Resumen'].map((label, index) => (
                                         <div key={index} className="flex items-center">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > index + 1 ? 'bg-primary-500 text-white' :
-                                                    currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
+                                                currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
                                                 }`}>
                                                 {index + 1}
                                             </div>
@@ -531,24 +531,24 @@ const VentasPage = () => {
                                             )}
                                             {currentStep === 4 && (
                                                 <>
-                                                <button
-                                                    type="button"
-                                                    className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
-                                                    id="btn-pagar"
-                                                    onClick={() => handlePayment()}
-                                                    disabled={isPaymentInProgress}
-                                                >
-                                                    {isPaymentInProgress ? 'Procesando...' : 'Pagar'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
-                                                    id="btn-cortesia"
-                                                    onClick={() => handlePayment('cortesia')}
-                                                    disabled={isPaymentInProgress}
-                                                >
-                                                    {isPaymentInProgress ? 'Procesando...' : 'Cortesía'}
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
+                                                        id="btn-pagar"
+                                                        onClick={() => handlePayment()}
+                                                        disabled={isPaymentInProgress}
+                                                    >
+                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
+                                                        id="btn-cortesia"
+                                                        onClick={() => handlePayment('cortesia')}
+                                                        disabled={isPaymentInProgress}
+                                                    >
+                                                        {isPaymentInProgress ? 'Procesando...' : 'Cortesía'}
+                                                    </button>
                                                 </>
                                             )}
                                         </div>
@@ -648,6 +648,116 @@ const VentasPage = () => {
                                             }}
                                         >
                                             Generar PDF
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary"
+                                            onClick={() => {
+                                                // Open print window
+                                                const printWindow = window.open('', '_blank');
+
+                                                // Create ticket HTML content
+                                                const ticketHtml = `
+                                                    <!DOCTYPE html>
+                                                    <html>
+                                                    <head>
+                                                        <meta charset="UTF-8">
+                                                        <title>¡Compra Exitosa! - ${tourData?.nombre || '¡Compra Exitosa!'}</title>
+                                                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                                                        <style>
+                                                            @page { margin: 0; }
+                                                            body { 
+                                                                font-family: Arial, sans-serif; 
+                                                                margin: 0;
+                                                                padding: 10px;
+                                                                background: #fff;
+                                                                color: #000;
+                                                            }
+                                                            .ticket-content {
+                                                                width: 80mm;
+                                                                max-width: 80mm;
+                                                                margin: 0 auto;
+                                                                padding: 10px 0;
+                                                                text-align: center;
+                                                            }
+                                                            h2 {
+                                                                font-size: 20pt;
+                                                                margin-bottom: 10px;
+                                                            }
+                                                            p {
+                                                                font-size: 13pt;
+                                                                margin: 5px 0;
+                                                            }
+                                                            .qr-code {
+                                                                margin: 10px auto;
+                                                                width: 120px;
+                                                                height: 120px;
+                                                            }
+                                                            .ticket-data {
+                                                                text-align: left;
+                                                                margin: 10px 0;
+                                                            }
+                                                            .ticket-data strong {
+                                                                display: inline-block;
+                                                                width: 150px;
+                                                            }
+                                                        </style>
+                                                    </head>
+                                                    <body>
+                                                        <div class="ticket-content">
+                                                            <h2>¡Compra Exitosa!</h2>
+                                                                                                                        
+                                                            <div class="ticket-data">
+                                                                <p><strong>Fecha de Compra:</strong> ${new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+                                                                <p><strong>Tipo de Boleto:</strong>${(ticketQuantities.entradaTipoA > 0 ? 'General' : ticketQuantities.entradaTipoB > 0 ? 'Mexicano' : 'Especial')} </p>
+                                                                <p><strong>Total:</strong> $${(ticketQuantities.entradaTipoA * 270 + ticketQuantities.entradaTipoB * 130 + ticketQuantities.entradaTipoC * 65).toFixed(2)}</p>
+
+
+                                                                <p><strong>Fecha de Visita:</strong> ${selectedDate?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                                <p><strong>Hora de Visita:</strong> ${selectedTime}</p>
+                                                                <p><strong>Visitantes:</strong> ${totalVisitantes}</p>
+
+                                                                <div class="qr-code" id="qrcode"></div>
+
+                                                                <p>Presenta este código a tu llegada</p>
+                                                                <p>Un correo con los detalles de tu compra ha sido enviado.</p>
+
+                                                                <p><strong>Tu número de Reservación es:</strong> ${reservationId}</p>
+                                                                <p>¡Gracias por tu compra!</p>
+                                                                
+                                                            </div>
+                                                                                                                        
+                                                            <p>Recuerda visitar www.museocasakahlo.org y entrar a tu cuenta para ver tu historial y fotos, revisar tu aviso de privacidad y términos y condiciones</p>
+                                                            
+                                                        </div>
+                                                        
+                                                        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                                                        <script>
+                                                            // Generate QR Code
+                                                            new QRCode(document.getElementById("qrcode"), {
+                                                                text: "${reservationId}",
+                                                                width: 120,
+                                                                height: 120
+                                                            });
+                                                            
+                                                            // Auto-print and close after a short delay
+                                                            setTimeout(() => {
+                                                                window.print();
+                                                                // Close the window after printing (may be blocked by popup blockers)
+                                                                setTimeout(() => window.close(), 500);
+                                                            }, 500);
+                                                        </script>
+                                                    </body>
+                                                    </html>
+                                                `;
+
+                                                // Write the content and open print dialog
+                                                printWindow.document.open();
+                                                printWindow.document.write(ticketHtml);
+                                                printWindow.document.close();
+                                            }}
+                                        >
+                                            Imprimir Ticket
                                         </button>
                                     </div>
                                 </div>
