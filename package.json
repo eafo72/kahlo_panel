@@ -66,6 +66,7 @@
     "recharts": "^2.3.2",
     "sass": "^1.56.1",
     "simplebar-react": "^2.4.3",
+    "socket.io-client": "^4.8.1",
     "sort-by": "^1.2.0",
     "swiper": "^8.4.5",
     "uuidv4": "^6.2.13",

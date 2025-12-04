@@ -87,9 +87,9 @@ export const UserProvider = ({ children }) => {
           //console.log(res.data);
 
           if (res.data[0]) {
-            if (res.data[0].isAdmin == 1 || res.data[0].isSuperAdmin == 1) {
+            if (res.data[0].isAdmin == 1 || res.data[0].isSuperAdmin == 1 || res.data[0].isInvestor == 1) {
               window.location.href = "/dashboard";
-            } else if (res.data[0].isGuia == 1) {
+            } else if (res.data[0].isGuia == 1 || res.data[0].isPartner == 1) {
               window.location.href = "/ventas";
             } else {
               toast.error("Lo sentimos el acceso solo es para administradores", {

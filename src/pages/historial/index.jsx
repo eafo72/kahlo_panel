@@ -215,7 +215,7 @@ const Historial = () => {
     if (user && user[0].isSuperAdmin == 1) {
       getHistory(1, user[0].empresa_id, user[0].id);
     }
-    if (user && user[0].isAdmin == 1 || user && user[0].isGuia == 1) {
+    if (user && user[0].isAdmin == 1 || user && user[0].isGuia == 1 || user && user[0].isInvestor == 1) {
       getHistory(2, user[0].empresa_id, user[0].id);
     }
     //console.log(datos);

@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // home pages  & dashboard
 //import Dashboard from "./pages/dashboard";
@@ -69,6 +70,8 @@ const ReservacionesModificar = lazy(() => import("./pages/reservaciones/modifica
 const ReservacionesCancelar = lazy(() => import("./pages/reservaciones/cancelar"));
 const ReservacionesImprimir = lazy(() => import("./pages/reservaciones/imprimir"));
 
+const Camara = lazy(() => import("./pages/camara"));
+
 const NoPage = lazy(() => import("./pages/404"));
 import Loading from "@/components/Loading";
 
@@ -76,6 +79,7 @@ import Layout from "./layout/Layout";
 
 function App() {
   const authenticated = false;
+  const publicRoutes = ['/']; // Añade aquí otras rutas públicas si las tienes
   return (
     <main className="App  relative">
       <Routes>
@@ -87,7 +91,11 @@ function App() {
             </Suspense>
           }
         />
-        <Route path="/*" element={<Layout />}>
+        <Route path="/*" element={
+          <ProtectedRoute publicRoutes={publicRoutes}>
+            <Layout />
+          </ProtectedRoute>
+        }>
           {/*<Route index element={<Dashboard />} />*/}
 
           <Route path="dashboard" element={<Dashboard />} />
@@ -157,6 +165,8 @@ function App() {
           <Route path="reservaciones/modificar" element={<ReservacionesModificar />} />
           <Route path="reservaciones/cancelar" element={<ReservacionesCancelar />} />
           <Route path="reservaciones/imprimir" element={<ReservacionesImprimir />} />
+          
+          <Route path="camara" element={<Camara />} />
 
           <Route path="*" element={<Navigate to="/404" />} />
         </Route>

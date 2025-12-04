@@ -42,10 +42,10 @@ const GuiasBorrar = () => {
     <>
       <ToastContainer />
       <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
-        <Card title="Borrar Guias">
+        <Card title="Borrar Colaboradores">
           <div className="space-y-4">
             <div className=" space-y-4 text-center">
-              <p>¿Seguro que desea borrar el guía: {id}?</p>
+              <p>¿Seguro que desea borrar el colaborador: {id}?</p>
               <Button
                 text="Borrar"
                 onClick={() => deleteGuia()}

@@ -240,7 +240,7 @@ const Guias = () => {
     <>
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <h4 className="card-title">Guias</h4>
+          <h4 className="card-title">Colaboradores</h4>
           <button onClick={(e) => handleAlta(e)} className="btn btn-success">Agregar nuevo</button>
           <div>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />

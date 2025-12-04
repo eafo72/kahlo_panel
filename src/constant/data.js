@@ -10,6 +10,11 @@ export const menuItems = [
     link: "dashboard",
   },
   {
+    title: "Monitor de Cámara",
+    icon: "heroicons:video-camera",
+    link: "camara",
+  },
+  {
     title: "Calendario",
     icon: "heroicons:calendar-days",
     link: "calendario",
@@ -20,7 +25,7 @@ export const menuItems = [
     link: "usuarios",
   },
   {
-    title: "Guias",
+    title: "Colaboradores",
     icon: "heroicons:identification",
     link: "guias",
   },
@@ -97,6 +102,11 @@ export const menuItemsAdministrador = [
     link: "dashboard",
   },
   {
+    title: "Monitor de Cámara",
+    icon: "heroicons:video-camera",
+    link: "camara",
+  },
+  {
     title: "Calendario",
     icon: "heroicons:calendar-days",
     link: "calendario",
@@ -130,7 +140,7 @@ export const menuItemsAdministrador = [
 
   },
   {
-    title: "Guias",
+    title: "Colaboradores",
     icon: "heroicons:identification",
     link: "guias",
   },
@@ -202,6 +212,46 @@ export const menuItemsGuia = [
   },
 
 ];
+
+export const menuItemsInvestor = [
+  {
+    isHeadr: true,
+    title: "menu",
+  },
+  {
+    title: "Dashboard",
+    icon: "heroicons:presentation-chart-bar",
+    link: "dashboard",
+  },
+  {
+    title: "Historial",
+    icon: "heroicons:table-cells",
+    link: "historial",
+  },
+];
+
+
+export const menuItemsPartner = [
+  {
+    isHeadr: true,
+    title: "menu",
+  },
+  {
+    title: "Historial",
+    icon: "heroicons:table-cells",
+    link: "historial",
+  },
+  {
+    title: "Punto de Venta",
+    icon: "heroicons:banknotes",
+    link: "ventas",
+  }
+];
+
+
+
+
+
 
 export const topMenu = [
   {

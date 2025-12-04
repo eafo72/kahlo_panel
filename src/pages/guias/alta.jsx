@@ -18,6 +18,7 @@ const GuiasAlta = () => {
   const [nombres, setNombres] = useState();
   const [apellidos, setApellidos] = useState();
   const [correo, setCorreo] = useState();
+  const [password, setPassword] = useState();
   const [foto, setFoto] = useState();
   const [identificacion, setIdentificacion] = useState();
   const [empresa_id, setEmpresa] = useState();
@@ -26,7 +27,7 @@ const GuiasAlta = () => {
 
   const navigate = useNavigate();
 
-  const mostrarMensaje = (mensaje) =>{
+  const mostrarMensaje = (mensaje) => {
     toast.error(mensaje, {
       position: "top-right",
       autoClose: 2500,
@@ -45,21 +46,23 @@ const GuiasAlta = () => {
   const sendData = (event) => {
     event.preventDefault();
 
-    
+
 
     //validamos campos
-    if(nombres == "" || nombres == undefined) {
+    if (nombres == "" || nombres == undefined) {
       mostrarMensaje("Debes escribir al menos un nombre");
-    }else if(apellidos == "" || apellidos == undefined) {
+    } else if (apellidos == "" || apellidos == undefined) {
       mostrarMensaje("Debes escribir al menos un apellido");
-    }else if(correo == "" || correo == undefined) {
+    } else if (correo == "" || correo == undefined) {
       mostrarMensaje("Debes escribir un correo");
-    }else if(foto == "" || foto == undefined) {
+    } else if (foto == "" || foto == undefined) {
       mostrarMensaje("Debes seleccionar una foto");
-    }else if(identificacion == "" || identificacion == undefined) {
-      mostrarMensaje("Debes seleccionar una foto de tu identificación");  
-    }else if(empresa_id == "" || empresa_id == undefined) {
+    } else if (identificacion == "" || identificacion == undefined) {
+      mostrarMensaje("Debes seleccionar una foto de tu identificación");
+    } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
+    } else if (password == "" || password == undefined) {
+      mostrarMensaje("Debes escribir una contraseña");
     } else {
       const createGuia = async (dataForm) => {
         try {
@@ -73,31 +76,33 @@ const GuiasAlta = () => {
 
           console.log(res);
           navigate("/guias");
-          
+
         } catch (error) {
           console.log(error);
           mostrarMensaje(error.response.data.msg);
         }
       };
-      if(user && user[0].isSuperAdmin == 1){
+      if (user && user[0].isSuperAdmin == 1) {
         createGuia({
           nombres,
           apellidos,
           correo,
+          password,
           foto,
           identificacion,
           empresa_id: empresa_id.value,
         });
-      }else{
+      } else {
         createGuia({
           nombres,
           apellidos,
           correo,
+          password,
           foto,
           identificacion,
           empresa_id
         });
-      }  
+      }
     }
   };
 
@@ -118,15 +123,15 @@ const GuiasAlta = () => {
       setLoading(false);
     });
     console.log(user);
-    if(authStatus === false) {
+    if (authStatus === false) {
       //navigate("/");
     }
-    if(user && user[0].isSuperAdmin == 1){
+    if (user && user[0].isSuperAdmin == 1) {
       getEmpresas();
     }
-    if(user && user[0].isAdmin == 1){
+    if (user && user[0].isAdmin == 1) {
       setEmpresa(user[0].empresa_id);
-    }  
+    }
   }, [authStatus]);
 
   const customStyles = {
@@ -151,84 +156,93 @@ const GuiasAlta = () => {
       {loading ? (
         <h4>Cargando...</h4>
       ) : (
-      <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
-        <Card title="Alta de Guias">
-          <form onSubmit={(e) => sendData(e)}>
-            <div className="space-y-4">
-              {/*Nombres*/}
-              <Textinput
-                onChange={(e) => setNombres(e.target.value)}
-                label="Nombres *"
-                placeholder="Nombres"
-                id="nombres"
-                type="text"
-              />
+        <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
+          <Card title="Alta de Colaboradores">
+            <form onSubmit={(e) => sendData(e)}>
+              <div className="space-y-4">
+                {/*Nombres*/}
+                <Textinput
+                  onChange={(e) => setNombres(e.target.value)}
+                  label="Nombres *"
+                  placeholder="Nombres"
+                  id="nombres"
+                  type="text"
+                />
 
-              {/*Apellidos*/}
-              <Textinput
-                onChange={(e) => setApellidos(e.target.value)}
-                label="Apellidos *"
-                placeholder="Apellidos"
-                id="apellidos"
-                type="text"
-              />
+                {/*Apellidos*/}
+                <Textinput
+                  onChange={(e) => setApellidos(e.target.value)}
+                  label="Apellidos *"
+                  placeholder="Apellidos"
+                  id="apellidos"
+                  type="text"
+                />
 
-              {/*Correo*/}
-              <Textinput
-                onChange={(e) => setCorreo(e.target.value)}
-                label="Correo *"
-                placeholder="Correo"
-                id="correo"
-                type="email"
-              />
+                {/*Correo*/}
+                <Textinput
+                  onChange={(e) => setCorreo(e.target.value)}
+                  label="Correo *"
+                  placeholder="Correo"
+                  id="correo"
+                  type="email"
+                />
 
-              {/*Foto*/}
-              <Textinput
-                onChange={(e) => setFoto(e.target.files[0])}
-                label="Foto *"
-                placeholder="Foto"
-                id="foto"
-                type="file"
-              />
+                {/*Foto*/}
+                <Textinput
+                  onChange={(e) => setFoto(e.target.files[0])}
+                  label="Foto *"
+                  placeholder="Foto"
+                  id="foto"
+                  type="file"
+                />
 
-              {/*Identificacion*/}
-              <Textinput
-                onChange={(e) => setIdentificacion(e.target.files[0])}
-                label="Identificación *"
-                placeholder="Identificación"
-                id="identificacion"
-                type="file"
-              />
+                {/*Identificacion*/}
+                <Textinput
+                  onChange={(e) => setIdentificacion(e.target.files[0])}
+                  label="Identificación *"
+                  placeholder="Identificación"
+                  id="identificacion"
+                  type="file"
+                />
 
-              {/*Empresa id*/}
-              {user && user[0].isSuperAdmin == 1 ?
-              
-              <Select
-                //onChange={(e) => setEmpresa(e.target.value)}
-                styles={customStyles}
-                label="Empresa *"
-                placeholder="Seleccione una empresa"
-                id="empresa_id"
-                options={allempresas.map((item) => ({
-                  label: item.nombre,
-                  value: item.id,
-                }))}
-                value={empresa_id}
-                onChange={setEmpresa}
-                isSearchable={true}
-              ></Select>
-              :
-              <></>
-              }
+                {/*Empresa id*/}
+                {user && user[0].isSuperAdmin == 1 ?
 
-              <div className=" space-y-4">
-                <p>* Campos requeridos</p>
-                <Button text="Guardar" type="submit" className="btn-dark" />
+                  <Select
+                    //onChange={(e) => setEmpresa(e.target.value)}
+                    styles={customStyles}
+                    label="Empresa *"
+                    placeholder="Seleccione una empresa"
+                    id="empresa_id"
+                    options={allempresas.map((item) => ({
+                      label: item.nombre,
+                      value: item.id,
+                    }))}
+                    value={empresa_id}
+                    onChange={setEmpresa}
+                    isSearchable={true}
+                  ></Select>
+                  :
+                  <></>
+                }
+
+                {/*Password*/}
+                <Textinput
+                  onChange={(e) => setPassword(e.target.value)}
+                  label="Contraseña *"
+                  placeholder="Contraseña"
+                  id="passw"
+                  type="password"
+                />
+
+                <div className=" space-y-4">
+                  <p>* Campos requeridos</p>
+                  <Button text="Guardar" type="submit" className="btn-dark" />
+                </div>
               </div>
-            </div>
-          </form>
-        </Card>
-      </div>
+            </form>
+          </Card>
+        </div>
       )}
     </>
   );
