@@ -210,6 +210,11 @@ export const menuItemsGuia = [
     icon: "heroicons:banknotes",
     link: "ventas",
   },
+  {
+    title: "Código QR",
+    icon: "heroicons:qr-code",
+    link: "colaboradores",
+  },
 
 ];
 

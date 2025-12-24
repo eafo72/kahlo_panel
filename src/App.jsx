@@ -72,6 +72,8 @@ const ReservacionesImprimir = lazy(() => import("./pages/reservaciones/imprimir"
 
 const Camara = lazy(() => import("./pages/camara"));
 
+const ColaboradoresQR = lazy(() => import("./pages/colaboradores"));
+
 const NoPage = lazy(() => import("./pages/404"));
 import Loading from "@/components/Loading";
 
@@ -167,6 +169,8 @@ function App() {
           <Route path="reservaciones/imprimir" element={<ReservacionesImprimir />} />
           
           <Route path="camara" element={<Camara />} />
+
+          <Route path="colaboradores" element={<ColaboradoresQR />} />
 
           <Route path="*" element={<Navigate to="/404" />} />
         </Route>

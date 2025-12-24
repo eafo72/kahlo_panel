@@ -34,6 +34,8 @@ const VentasPage = () => {
     const [reservationId, setReservationId] = useState(null);
     const [clientExist, setClientExist] = useState(null);
     const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
+    const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
+
 
     const tourId = 24;
 
@@ -43,7 +45,7 @@ const VentasPage = () => {
         try {
             const {
                 tourData,
-                selectedDate,
+                selectedDate, 
                 selectedTime,
                 ticketQuantities,
                 contactInfo,
@@ -358,6 +360,32 @@ const VentasPage = () => {
         });
     };
 
+    const CardPaymentModal = ({ onConfirm, onCancel }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl">
+                <div className="text-center">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Confirmar Pago con Tarjeta</h3>
+                    <p className="text-slate-600 dark:text-slate-300 mb-6">¿Ya recibiste el pago?</p>
+                    
+                    <div className="flex justify-center space-x-4">
+                        <button
+                            onClick={onCancel}
+                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                        >
+                            Confirmar Pago
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     const handlePayment = async (type = 'venta') => {
         try {
             // Deshabilitar botones
@@ -538,7 +566,15 @@ const VentasPage = () => {
                                                         onClick={() => handlePayment()}
                                                         disabled={isPaymentInProgress}
                                                     >
-                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar'}
+                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar en efectivo'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
+                                                        onClick={() => setShowCardPaymentModal(true)}
+                                                        disabled={isPaymentInProgress}
+                                                    >
+                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar con tarjeta'}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -554,6 +590,15 @@ const VentasPage = () => {
                                         </div>
                                     </div>
                                 </form>
+                                 {showCardPaymentModal && (
+                                    <CardPaymentModal
+                                        onConfirm={async () => {
+                                            setShowCardPaymentModal(false);
+                                            await handlePayment();
+                                        }}
+                                        onCancel={() => setShowCardPaymentModal(false)}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>

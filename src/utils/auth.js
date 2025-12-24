@@ -12,6 +12,7 @@ const routePermissions = {
   '/administradores':        [ROLES.SUPER_ADMIN],
   '/calendario':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/camara':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  '/colaboradores':          [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
   '/categorias':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/comentarios':            [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/dashboard':              [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR],
