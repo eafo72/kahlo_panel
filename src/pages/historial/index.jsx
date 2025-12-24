@@ -144,6 +144,17 @@ const Historial = () => {
       },
     },
     {
+      Header: "Cobrado Tarjeta",
+      accessor: "cobrado_tarjeta",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+      Footer: (info) => {
+        const total_tarjeta = info.rows.reduce((sum, row) => sum + Number(row.values.cobrado_tarjeta), 0);
+        return <strong>Total: {total_tarjeta}</strong>;
+      },
+    },
+    {
       Header: "Cobrado Stripe",
       accessor: "cobrado_stripe",
       Cell: (row) => {

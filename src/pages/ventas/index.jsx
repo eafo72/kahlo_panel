@@ -35,8 +35,7 @@ const VentasPage = () => {
     const [clientExist, setClientExist] = useState(null);
     const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
     const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
-
-
+    
     const tourId = 24;
 
 
@@ -429,7 +428,7 @@ const VentasPage = () => {
 
             // Realizar la solicitud de creación de venta
             let endpoint = null;
-            if (type == 'cortesia') {
+            if (type == 'Cortesia') {
                 endpoint = '/venta/crear-admin-cortesia';
             } else {
                 endpoint = '/venta/crear-admin';
@@ -447,7 +446,8 @@ const VentasPage = () => {
                 "tourId": tourId,
                 "fecha_ida": fecha,
                 "horaCompleta": horario,
-                "total": totalCalculado
+                "total": totalCalculado,
+                "metodo_pago": type
             });
 
             console.log('Respuesta de la API:', response.data);
@@ -563,7 +563,7 @@ const VentasPage = () => {
                                                         type="button"
                                                         className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
                                                         id="btn-pagar"
-                                                        onClick={() => handlePayment()}
+                                                        onClick={() => handlePayment('Efectivo')}
                                                         disabled={isPaymentInProgress}
                                                     >
                                                         {isPaymentInProgress ? 'Procesando...' : 'Pagar en efectivo'}
@@ -580,7 +580,7 @@ const VentasPage = () => {
                                                         type="button"
                                                         className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
                                                         id="btn-cortesia"
-                                                        onClick={() => handlePayment('cortesia')}
+                                                        onClick={() => handlePayment('Cortesia')}
                                                         disabled={isPaymentInProgress}
                                                     >
                                                         {isPaymentInProgress ? 'Procesando...' : 'Cortesía'}
@@ -594,9 +594,12 @@ const VentasPage = () => {
                                     <CardPaymentModal
                                         onConfirm={async () => {
                                             setShowCardPaymentModal(false);
-                                            await handlePayment();
+                                            await handlePayment('Pos_tarjeta');
                                         }}
-                                        onCancel={() => setShowCardPaymentModal(false)}
+                                        onCancel={() => {
+                                            setShowCardPaymentModal(false);
+                                            
+                                        }}
                                     />
                                 )}
                             </div>
