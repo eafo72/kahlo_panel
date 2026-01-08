@@ -82,11 +82,7 @@ export const menuItems = [
     icon: "heroicons:banknotes",
     link: "ventas",
   },
-  {
-    title: "Comentarios",
-    icon: "heroicons:chat-bubble-left-right",
-    link: "comentarios",
-  },
+ 
 
 ];
 
@@ -161,11 +157,7 @@ export const menuItemsAdministrador = [
     link: "ventas",
   },
 
-  {
-    title: "Comentarios",
-    icon: "heroicons:chat-bubble-left-right",
-    link: "comentarios",
-  },
+ 
 
 
 

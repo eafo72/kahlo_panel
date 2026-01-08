@@ -52,7 +52,7 @@ const ColaboradorQR = () => {
     const firstNameCode = firstName.length >= 2 ? firstName.substring(0, 2) : 'XX';
     const lastNameCode = lastName.length >= 2 ? lastName.substring(0, 2) : 'XX';
     
-    return `${collabId}${firstNameCode}${lastNameCode}/1/Z`;
+    return `${collabId}${firstNameCode}${lastNameCode}-1-Z`;
   };
 
   // Get QR code value, returns null if user data isn't ready
