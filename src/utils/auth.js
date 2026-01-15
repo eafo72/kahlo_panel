@@ -4,6 +4,7 @@ const ROLES = {
   ADMIN: 'admin',
   INVESTOR: 'investor',
   GUIDE: 'guide',
+  SPECIALIST: 'specialist',
   PARTNER: 'partner'
 };
 
@@ -12,7 +13,7 @@ const routePermissions = {
   '/administradores':        [ROLES.SUPER_ADMIN],
   '/calendario':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/camara':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-  '/colaboradores':          [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
+  '/colaboradores':          [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.SPECIALIST],
   '/categorias':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/comentarios':            [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/dashboard':              [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR],
@@ -25,6 +26,7 @@ const routePermissions = {
   '/reservaciones/modificar':[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
   '/tours':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/usuarios':               [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  '/checkin':                [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/ventas':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.PARTNER],
 };
 
@@ -37,6 +39,7 @@ const getUserRole = (user) => {
   if (user.isAdmin === 1) return ROLES.ADMIN;
   if (user.isInvestor === 1) return ROLES.INVESTOR;
   if (user.isGuia === 1) return ROLES.GUIDE;
+  if (user.isSpecialist === 1) return ROLES.SPECIALIST;
   if (user.isPartner === 1) return ROLES.PARTNER;
   
   return null;

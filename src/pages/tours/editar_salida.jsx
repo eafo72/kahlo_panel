@@ -16,9 +16,11 @@ const ToursEditarSalida = () => {
   const [loading, setLoading] = useState(true);
   const [isDark] = useDarkMode();
   const [dia, setDia] = useState();
-  
+
   const [hora_salida, setSalida] = useState();
   const [hora_regreso, setRegreso] = useState();
+
+  const [status, setStatus] = useState();
 
   const diasSemana = [
     { value: 'Lunes', label: 'Lunes' },
@@ -72,9 +74,10 @@ const ToursEditarSalida = () => {
       setDia({
         label: res.data[0].dia,
         value: res.data[0].dia,
-      });  
+      });
       setSalida(res.data[0].hora_salida);
       setRegreso(res.data[0].hora_regreso);
+      setStatus(res.data[0].status);
     } catch (error) {
       console.log(error);
       mostrarMensaje(error.code);
@@ -85,26 +88,28 @@ const ToursEditarSalida = () => {
     verifyingToken().then(() => {
       setLoading(false);
     });
-    if(authStatus === false) {
+    if (authStatus === false) {
       //navigate("/");
     }
     getTour();
     getSalida();
   }, [authStatus]);
 
-  
-  
+
+
 
   const sendData = (event) => {
     event.preventDefault();
 
     //validamos campos
-    if(dia == "" || dia == undefined) {
+    if (dia == "" || dia == undefined) {
       mostrarMensaje("Debes seleccionar un día");
-    }else if(hora_salida == "" || hora_salida == undefined) {
+    } else if (hora_salida == "" || hora_salida == undefined) {
       mostrarMensaje("Debes seleccionar la hora de salida");
-    }else if(hora_regreso == "" || hora_regreso == undefined) {
+    } else if (hora_regreso == "" || hora_regreso == undefined) {
       mostrarMensaje("Debes seleccionar la hora de regreso");
+    } else if (status == "" || status == undefined) {
+      mostrarMensaje("Debes escribir un número en status");
     } else {
       const editSalida = async () => {
         try {
@@ -113,9 +118,10 @@ const ToursEditarSalida = () => {
             url: "/admin/fecha-tour/set",
             data: {
               id,
-              dia:dia.value,
+              dia: dia.value,
               hora_salida,
-              hora_regreso
+              hora_regreso,
+              status
             },
           });
           console.log(res);
@@ -151,69 +157,79 @@ const ToursEditarSalida = () => {
       {loading ? (
         <h4>Cargando...</h4>
       ) : (
-      <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
-        <Card title="Editar Salida">
-          <form onSubmit={(e) => sendData(e)}>
-            <div className="space-y-4">
-              
-              {/*Dia*/}
-              <Select
-                styles={customStyles}
-                label="Día *"
-                placeholder="Seleccione una día"
-                id="dia"
-                options={diasSemana}
-                value={dia}
-                onChange={setDia}
-                isSearchable={true}
-              ></Select>
+        <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
+          <Card title="Editar Salida">
+            <form onSubmit={(e) => sendData(e)}>
+              <div className="space-y-4">
+
+                {/*Dia*/}
+                <Select
+                  styles={customStyles}
+                  label="Día *"
+                  placeholder="Seleccione una día"
+                  id="dia"
+                  options={diasSemana}
+                  value={dia}
+                  onChange={setDia}
+                  isSearchable={true}
+                ></Select>
 
 
-              {/*Salida*/}
-              <Textinput
-                onChange={(e) => {
-                  setSalida(e.target.value);
-                  // La duración ahora está en minutos
-                  const horaSalida = e.target.value;
-                  const comboHoraSalida = horaSalida.split(":");
-                  let horaRegreso = "";
-                  const salidaMinutos = parseInt(comboHoraSalida[0]) * 60 + parseInt(comboHoraSalida[1]);
-                  const regresoMinutos = salidaMinutos + parseInt(duracion);
-                  // Ajustar si pasa de 24 horas
-                  const regresoHoras = Math.floor((regresoMinutos % 1440) / 60); // 1440 minutos en 24 horas
-                  const regresoMins = regresoMinutos % 60;
-                  horaRegreso = ("0" + regresoHoras).slice(-2) + ":" + ("0" + regresoMins).slice(-2);
-                  setRegreso(horaRegreso);
-                }}
-                label="Hora de Salida *"
-                placeholder="Hora de Salida"
-                id="salida"
-                type="time"
-                defaultValue={hora_salida}
-              />
+                {/*Salida*/}
+                <Textinput
+                  onChange={(e) => {
+                    setSalida(e.target.value);
+                    // La duración ahora está en minutos
+                    const horaSalida = e.target.value;
+                    const comboHoraSalida = horaSalida.split(":");
+                    let horaRegreso = "";
+                    const salidaMinutos = parseInt(comboHoraSalida[0]) * 60 + parseInt(comboHoraSalida[1]);
+                    const regresoMinutos = salidaMinutos + parseInt(duracion);
+                    // Ajustar si pasa de 24 horas
+                    const regresoHoras = Math.floor((regresoMinutos % 1440) / 60); // 1440 minutos en 24 horas
+                    const regresoMins = regresoMinutos % 60;
+                    horaRegreso = ("0" + regresoHoras).slice(-2) + ":" + ("0" + regresoMins).slice(-2);
+                    setRegreso(horaRegreso);
+                  }}
+                  label="Hora de Salida *"
+                  placeholder="Hora de Salida"
+                  id="salida"
+                  type="time"
+                  defaultValue={hora_salida}
+                />
 
-              {/*Regreso*/}
-              <Textinput
-                //onChange={(e) => setRegreso(e.target.value)}
-                label="Hora de Regreso *"
-                placeholder="Hora de Regreso"
-                id="regreso"
-                type="time"
-                defaultValue={hora_regreso}
-                disabled={true}
-              />
+                {/*Regreso*/}
+                <Textinput
+                  //onChange={(e) => setRegreso(e.target.value)}
+                  label="Hora de Regreso *"
+                  placeholder="Hora de Regreso"
+                  id="regreso"
+                  type="time"
+                  defaultValue={hora_regreso}
+                  disabled={true}
+                />
 
-              
+                {/*Status*/}
+                <Textinput
+                  onChange={(e) => setStatus(e.target.value)}
+                  label="Status"
+                  placeholder="Status"
+                  id="status"
+                  type="number"
+                  defaultValue={status}
+                />
 
-              <div className=" space-y-4">
-                <p>* Campos requeridos</p>
-                <Button text="Guardar" type="submit" className="btn-dark" />
+
+
+                <div className=" space-y-4">
+                  <p>* Campos requeridos</p>
+                  <Button text="Guardar" type="submit" className="btn-dark" />
+                </div>
               </div>
-            </div>
-          </form>
-        </Card>
-      </div>
-       )}
+            </form>
+          </Card>
+        </div>
+      )}
     </>
   );
 };

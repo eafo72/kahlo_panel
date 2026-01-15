@@ -74,6 +74,8 @@ const Camara = lazy(() => import("./pages/camara"));
 
 const ColaboradoresQR = lazy(() => import("./pages/colaboradores"));
 
+const Checkin = lazy(() => import("./pages/checkin"));
+
 const NoPage = lazy(() => import("./pages/404"));
 import Loading from "@/components/Loading";
 
@@ -171,6 +173,8 @@ function App() {
           <Route path="camara" element={<Camara />} />
 
           <Route path="colaboradores" element={<ColaboradoresQR />} />
+
+          <Route path="checkin" element={<Checkin />} />
 
           <Route path="*" element={<Navigate to="/404" />} />
         </Route>

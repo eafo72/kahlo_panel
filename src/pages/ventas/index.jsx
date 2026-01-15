@@ -35,7 +35,7 @@ const VentasPage = () => {
     const [clientExist, setClientExist] = useState(null);
     const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
     const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
-    
+
     const tourId = 24;
 
 
@@ -44,7 +44,7 @@ const VentasPage = () => {
         try {
             const {
                 tourData,
-                selectedDate, 
+                selectedDate,
                 selectedTime,
                 ticketQuantities,
                 contactInfo,
@@ -365,7 +365,7 @@ const VentasPage = () => {
                 <div className="text-center">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Confirmar Pago con Tarjeta</h3>
                     <p className="text-slate-600 dark:text-slate-300 mb-6">¿Ya recibiste el pago?</p>
-                    
+
                     <div className="flex justify-center space-x-4">
                         <button
                             onClick={onCancel}
@@ -590,7 +590,7 @@ const VentasPage = () => {
                                         </div>
                                     </div>
                                 </form>
-                                 {showCardPaymentModal && (
+                                {showCardPaymentModal && (
                                     <CardPaymentModal
                                         onConfirm={async () => {
                                             setShowCardPaymentModal(false);
@@ -598,7 +598,7 @@ const VentasPage = () => {
                                         }}
                                         onCancel={() => {
                                             setShowCardPaymentModal(false);
-                                            
+
                                         }}
                                     />
                                 )}
@@ -916,9 +916,16 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
                         disabled={availableTimes.length === 0}
                     >
                         <option value="" disabled>-- Elige un horario --</option>
+                        
                         {availableTimes.map(horario => (
-                            <option key={horario.hora_salida} value={horario.hora_salida} disabled={!horario.disponible}>
-                                {horario.hora_salida} {!horario.disponible ? `(${horario.lugares_disp} disponibles)` : ''}
+                            <option
+                                key={horario.hora_salida}
+                                value={horario.hora_salida}
+                                disabled={!horario.disponible}
+                            >
+                                {horario.hora_salida}
+                                {!horario.disponible ? ` (${horario.lugares_disp} disponibles)` : ''}
+                                {horario.idioma ? ` - ${horario.idioma}` : ''}
                             </option>
                         ))}
                     </select>

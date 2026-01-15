@@ -16,7 +16,8 @@ import { useNavigate } from "react-router-dom";
 import clienteAxios from "../../configs/axios";
 import { UserContext } from "../../pages/context/userContext";
 
-const ToursSalidas = () => {
+const Checkin = () => {
+
   const COLUMNS = [
     {
       Header: "Id",
@@ -26,134 +27,54 @@ const ToursSalidas = () => {
       },
     },
     {
-      Header: "Dia",
-      accessor: "dia",
+      Header: "Nombre",
+      accessor: "nombre_completo",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
       },
     },
     {
-      Header: "Hora Salida",
-      accessor: "hora_salida",
+      Header: "Checkin",
+      accessor: "hora",
       Cell: (row) => {
         return <span>{row?.cell?.value}</span>;
-      },
-    },
-    {
-      Header: "Hora Regreso",
-      accessor: "hora_regreso",
-      Cell: (row) => {
-        return <span>{row?.cell?.value}</span>;
-      },
-    },
-  
-    {
-      Header: "Status",
-      accessor: "status",
-      Cell: (row) => {
-        return <span>{row?.cell?.value}</span>;
-      },
-    },
-    {
-      Header: "action",
-      accessor: "action",
-      Cell: (row) => {
-        return (
-          <div>
-            <Dropdown
-              classMenuItems="right-0 w-[140px] top-[110%] "
-              label={
-                <span className="text-xl text-center block w-full">
-                  <Icon icon="heroicons-outline:dots-vertical" />
-                </span>
-              }
-            >
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {actions.map((item, i) => (
-                  <Menu.Item key={i}>
-                    <div
-                      onClick={() => item.ActionToDo(row.row.original.id)}
-                      className={`
-                  
-                    ${
-                      item.name === "Borrar"
-                        ? "bg-danger-500 text-danger-500 bg-opacity-30   hover:bg-opacity-100 hover:text-white"
-                        : "hover:bg-slate-900 hover:text-white dark:hover:bg-slate-600 dark:hover:bg-opacity-50"
-                    }
-                     w-full border-b border-b-gray-500 border-opacity-10 px-4 py-2 text-sm  last:mb-0 cursor-pointer 
-                     first:rounded-t last:rounded-b flex  space-x-2 items-center rtl:space-x-reverse `}
-                    >
-                      <span className="text-base">
-                        <Icon icon={item.icon} />
-                      </span>
-                      <span>{item.name}</span>
-                    </div>
-                  </Menu.Item>
-                ))}
-              </div>
-            </Dropdown>
-          </div>
-        );
       },
     },
   ];
 
-  const actions = [
-    {
-      name: "Editar",
-      icon: "heroicons:pencil-square",
-      ActionToDo: (id) => {
-        //console.log("Editar"+id);
-        localStorage.setItem("EditSalidaTour", id);
-        navigate("/tours/editar_salida");
-      },
-    },
-    {
-      name: "Borrar",
-      icon: "heroicons-outline:trash",
-      ActionToDo: (id) => {
-        //console.log("Borrar"+id);
-        localStorage.setItem("DeleteSalidaTour", id);
-        navigate("/tours/borrar_salida");
-      },
-    },
-  ];
+
 
   const columns = useMemo(() => COLUMNS, []);
 
   const [datos, setDatos] = useState([]);
 
   const userCtx = useContext(UserContext);
-  const { user, authStatus, verifyingToken } = userCtx;
+  const { authStatus, verifyingToken } = userCtx;
 
   const navigate = useNavigate();
 
-  const id = localStorage.getItem("SalidasTour");
-
-  const getSalidas = async () => {
-      try {
-        const res = await clienteAxios.get(
-            "/admin/fecha-tour/obtenerbytour/" + id
-          );
-        console.log(res.data);
-        setDatos(res.data);
-      } catch (error) {
-        console.log(error);
-      }
+  const getCheckinData = async () => {
+    try {
+      const res = await clienteAxios.get(`/venta/checkin-data`);
+      console.log(res.data);
+      setDatos(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
+
   useEffect(() => {
     verifyingToken();
-    //console.log(user);
     if (authStatus === false) {
       //navigate("/");
     }
-    getSalidas();
+    getCheckinData();
     console.log(datos);
   }, [authStatus]);
 
-  const handleAlta = () => {
-    navigate("/tours/alta_salida");
-  };
+
+
+
 
   const data = useMemo(() => datos, [datos]);
 
@@ -188,18 +109,30 @@ const ToursSalidas = () => {
   } = tableInstance;
 
   const { globalFilter, pageIndex, pageSize } = state;
+  useEffect(() => {
+    setPageSize(20); // 👈 ahora cada página tendrá 20 registros
+  }, [setPageSize]);
   return (
     <>
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <h4 className="card-title">Salidas de la Visita {id}</h4>
-          <button onClick={(e) => handleAlta(e)} className="btn btn-success">
-            Agregar nuevo
-          </button>
-          <div>
+          <h4 className="card-title">Checkin Data</h4>
+          <div className="flex items-right">
+            <select style={{ maxWidth: "150px", marginRight: "10px" }}
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="form-control py-2"
+            >
+              {[10, 20, 30, 40, 50, 100, 200, 500].map(size => (
+                <option key={size} value={size}>
+                  Mostrar {size}
+                </option>
+              ))}
+            </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
+        <div></div>
         <div className="overflow-x-auto -mx-6">
           <div className="inline-block min-w-full align-middle">
             <div className="overflow-hidden ">
@@ -282,12 +215,11 @@ const ToursSalidas = () => {
               </span>
             </span>
           </div>
-          <ul className="flex items-center  space-x-3  rtl:space-x-reverse">
+          <ul className="flex flex-wrap justify-center gap-2 mt-4">
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${
-                  !canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
               >
@@ -299,11 +231,10 @@ const ToursSalidas = () => {
                 <button
                   href="#"
                   aria-current="page"
-                  className={` ${
-                    pageIdx === pageIndex
-                      ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
-                      : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                  }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
+                  className={` ${pageIdx === pageIndex
+                    ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
+                    : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
+                    }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
                   onClick={() => gotoPage(pageIdx)}
                 >
                   {page + 1}
@@ -312,9 +243,8 @@ const ToursSalidas = () => {
             ))}
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${
-                  !canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 onClick={() => nextPage()}
                 disabled={!canNextPage}
               >
@@ -328,4 +258,4 @@ const ToursSalidas = () => {
   );
 };
 
-export default ToursSalidas;
+export default Checkin;

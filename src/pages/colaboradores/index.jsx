@@ -94,7 +94,7 @@ const ColaboradorQR = () => {
     <div>
       <ToastContainer />
       <div className="grid xl:grid-cols-1 grid-cols-1">
-        <Card title="Código QR del Colaborador">
+        <Card title="Código QR">
           <div className="p-4 bg-white rounded-2xl shadow-lg flex flex-col items-center">
             {loading ? (
               <p>Cargando información del colaborador...</p>

@@ -25,6 +25,11 @@ export const menuItems = [
     link: "usuarios",
   },
   {
+    title: "Checkin",
+    icon: "heroicons:document-check",
+    link: "checkin",
+  },
+  {
     title: "Colaboradores",
     icon: "heroicons:identification",
     link: "guias",
@@ -82,7 +87,12 @@ export const menuItems = [
     icon: "heroicons:banknotes",
     link: "ventas",
   },
- 
+
+  {
+    title: "Código QR",
+    icon: "heroicons:qr-code",
+    link: "colaboradores",
+  },
 
 ];
 
@@ -136,6 +146,12 @@ export const menuItemsAdministrador = [
 
   },
   {
+    title: "Checkin",
+    icon: "heroicons:document-check",
+    link: "checkin",
+  },
+  
+  {
     title: "Colaboradores",
     icon: "heroicons:identification",
     link: "guias",
@@ -157,8 +173,12 @@ export const menuItemsAdministrador = [
     link: "ventas",
   },
 
- 
 
+  {
+    title: "Código QR",
+    icon: "heroicons:qr-code",
+    link: "colaboradores",
+  },
 
 
 

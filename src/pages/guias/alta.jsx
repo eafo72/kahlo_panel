@@ -22,8 +22,13 @@ const GuiasAlta = () => {
   const [foto, setFoto] = useState();
   const [identificacion, setIdentificacion] = useState();
   const [empresa_id, setEmpresa] = useState();
+  const [tipoColaborador, setTipoColaborador] = useState();
 
   const [allempresas, setAllEmpresas] = useState([]);
+  const allUserTypes = [
+    { value: "Colaborador", label: "Colaborador" },
+    { value: "Especialista", label: "Especialista" }
+  ];
 
   const navigate = useNavigate();
 
@@ -61,6 +66,8 @@ const GuiasAlta = () => {
       mostrarMensaje("Debes seleccionar una foto de tu identificación");
     } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
+    } else if (tipoColaborador.value == "" || tipoColaborador.value == undefined) {
+      mostrarMensaje("Debes seleccionar un tipo de colaborador");  
     } else if (password == "" || password == undefined) {
       mostrarMensaje("Debes escribir una contraseña");
     } else {
@@ -91,6 +98,7 @@ const GuiasAlta = () => {
           foto,
           identificacion,
           empresa_id: empresa_id.value,
+          tipoColaborador: tipoColaborador.value
         });
       } else {
         createGuia({
@@ -100,7 +108,8 @@ const GuiasAlta = () => {
           password,
           foto,
           identificacion,
-          empresa_id
+          empresa_id,
+          tipoColaborador: tipoColaborador.value
         });
       }
     }
@@ -225,6 +234,17 @@ const GuiasAlta = () => {
                   :
                   <></>
                 }
+
+                <Select
+                  styles={customStyles}
+                  label="Tipo Colaborador *"
+                  placeholder="Seleccione una tipo de colaborador"
+                  id="tipoColaborador"
+                  options={allUserTypes}
+                  value={tipoColaborador}
+                  onChange={setTipoColaborador}
+                  isSearchable={true}
+                ></Select>
 
                 {/*Password*/}
                 <Textinput
