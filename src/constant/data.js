@@ -83,6 +83,11 @@ export const menuItems = [
     link: "historial",
   },
   {
+    title: "Ventas Canceladas",
+    icon: "heroicons:table-cells",
+    link: "canceladas",
+  },
+  {
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
     link: "ventas",
@@ -150,7 +155,7 @@ export const menuItemsAdministrador = [
     icon: "heroicons:document-check",
     link: "checkin",
   },
-  
+
   {
     title: "Colaboradores",
     icon: "heroicons:identification",
@@ -166,7 +171,11 @@ export const menuItemsAdministrador = [
     icon: "heroicons:table-cells",
     link: "historial",
   },
-
+  {
+    title: "Ventas Canceladas",
+    icon: "heroicons:table-cells",
+    link: "canceladas",
+  },
   {
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
@@ -218,6 +227,11 @@ export const menuItemsGuia = [
     link: "historial",
   },
   {
+    title: "Ventas Canceladas",
+    icon: "heroicons:table-cells",
+    link: "canceladas",
+  },
+  {
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
     link: "ventas",
@@ -257,6 +271,18 @@ export const menuItemsPartner = [
     title: "Historial",
     icon: "heroicons:table-cells",
     link: "historial",
+  },
+  {
+    title: "Punto de Venta",
+    icon: "heroicons:banknotes",
+    link: "ventas",
+  }
+];
+
+export const menuItemsOperator = [
+  {
+    isHeadr: true,
+    title: "menu",
   },
   {
     title: "Punto de Venta",

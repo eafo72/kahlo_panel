@@ -93,6 +93,8 @@ export const UserProvider = ({ children }) => {
               window.location.href = "/ventas";
             } else if (res.data[0].isSpecialist == 1) {
               window.location.href = "/colaboradores";
+            } else if (res.data[0].isOperator == 1) {
+              window.location.href = "/ventas";
             } else {
               toast.error("Lo sentimos el acceso solo es para administradores", {
                 position: "top-right",

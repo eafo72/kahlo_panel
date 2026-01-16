@@ -5,6 +5,7 @@ const ROLES = {
   INVESTOR: 'investor',
   GUIDE: 'guide',
   SPECIALIST: 'specialist',
+  OPERATOR: 'operator',
   PARTNER: 'partner'
 };
 
@@ -13,9 +14,11 @@ const routePermissions = {
   '/administradores':        [ROLES.SUPER_ADMIN],
   '/calendario':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/camara':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  '/canceladas':             [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR, ROLES.GUIDE, ROLES.PARTNER],
   '/colaboradores':          [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.SPECIALIST],
   '/categorias':             [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/comentarios':            [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  '/checkin':                [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/dashboard':              [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR],
   '/empresas':               [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/fotografias/alta':       [ROLES.SUPER_ADMIN, ROLES.ADMIN],
@@ -26,8 +29,7 @@ const routePermissions = {
   '/reservaciones/modificar':[ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
   '/tours':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/usuarios':               [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-  '/checkin':                [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-  '/ventas':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.PARTNER],
+  '/ventas':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.PARTNER, ROLES.OPERATOR],
 };
 
 // Function to get user role based on user object
@@ -41,6 +43,7 @@ const getUserRole = (user) => {
   if (user.isGuia === 1) return ROLES.GUIDE;
   if (user.isSpecialist === 1) return ROLES.SPECIALIST;
   if (user.isPartner === 1) return ROLES.PARTNER;
+  if (user.isOperator === 1) return ROLES.OPERATOR;
   
   return null;
 };

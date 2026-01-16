@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useContext } from "react";
 
 import Navmenu from "./Navmenu";
-import { menuItems, menuItemsAdministrador, menuItemsGuia, menuItemsInvestor, menuItemsPartner } from "@/constant/data";
+import { menuItems, menuItemsAdministrador, menuItemsGuia, menuItemsInvestor, menuItemsPartner, menuItemsOperator } from "@/constant/data";
 import SimpleBar from "simplebar-react";
 import useSemiDark from "@/hooks/useSemiDark";
 import useSkin from "@/hooks/useSkin";
@@ -46,9 +46,9 @@ const MobileMenu = () => {
           <div className="flex items-center space-x-4">
             <div className="logo-icon">
               {!isDark && !isSemiDark ? (
-                <img src={MobileLogo} alt="" />
+                <img src={MobileLogo} alt=""  style={{ width: "50px", height: "50px" }}/>
               ) : (
-                <img src={MobileLogoWhite} alt="" />
+                <img src={MobileLogoWhite} alt="" style={{ width: "50px", height: "50px" }}/>
               )}
             </div>
             <div>
@@ -84,6 +84,8 @@ const MobileMenu = () => {
             <Navmenu menus={menuItemsInvestor} />
           ) : user[0].isPartner == 1 ? (
             <Navmenu menus={menuItemsPartner} />
+          ) : user[0].isOperator == 1 ? (
+            <Navmenu menus={menuItemsOperator} />
           ) : (
             <></>
           )

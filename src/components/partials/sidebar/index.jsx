@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useContext } from "react";
 import SidebarLogo from "./Logo";
 import Navmenu from "./Navmenu";
-import { menuItems, menuItemsAdministrador, menuItemsGuia, menuItemsInvestor, menuItemsPartner } from "@/constant/data";
+import { menuItems, menuItemsAdministrador, menuItemsGuia, menuItemsInvestor, menuItemsPartner, menuItemsOperator } from "@/constant/data";
 import SimpleBar from "simplebar-react";
 import useSidebar from "@/hooks/useSidebar";
 import useSemiDark from "@/hooks/useSemiDark";
@@ -77,6 +77,8 @@ const Sidebar = () => {
             <Navmenu menus={menuItemsInvestor} />
           ) : user[0].isPartner == 1 ? (
             <Navmenu menus={menuItemsPartner} />
+          ) : user[0].isOperator == 1 ? (
+            <Navmenu menus={menuItemsOperator} />
           ) : (
             <></>
           )
