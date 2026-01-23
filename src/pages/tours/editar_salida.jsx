@@ -21,6 +21,12 @@ const ToursEditarSalida = () => {
   const [hora_regreso, setRegreso] = useState();
 
   const [status, setStatus] = useState();
+  const [applyForOperator, setApplyForOperator] = useState(0);
+  
+  const opcionesAplicaOperador = [
+    { value: 1, label: 'Sí' },
+    { value: 0, label: 'No' }
+  ];
 
   const diasSemana = [
     { value: 'Lunes', label: 'Lunes' },
@@ -78,6 +84,9 @@ const ToursEditarSalida = () => {
       setSalida(res.data[0].hora_salida);
       setRegreso(res.data[0].hora_regreso);
       setStatus(res.data[0].status);
+      // Convert to number to ensure proper comparison in the select component
+      const applyForOperatorValue = res.data[0].applyForOperator;
+      setApplyForOperator(applyForOperatorValue !== undefined ? Number(applyForOperatorValue) : 0);
     } catch (error) {
       console.log(error);
       mostrarMensaje(error.code);
@@ -121,7 +130,8 @@ const ToursEditarSalida = () => {
               dia: dia.value,
               hora_salida,
               hora_regreso,
-              status
+              status,
+              apply_for_operator: applyForOperator
             },
           });
           console.log(res);
@@ -219,6 +229,23 @@ const ToursEditarSalida = () => {
                   defaultValue={status}
                 />
 
+                {/* Aplica para Tour Operadores */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-200">
+                    ¿Aplica para Tour Operadores? *
+                  </label>
+                  <Select
+                    styles={customStyles}
+                    placeholder="Seleccione una opción"
+                    options={opcionesAplicaOperador}
+                    value={opcionesAplicaOperador.find(option => option.value === applyForOperator) || null}
+                    onChange={(selected) => setApplyForOperator(selected?.value || 0)}
+                    isSearchable={false}
+                    className="react-select"
+                    classNamePrefix="select"
+                    required
+                  />
+                </div>
 
 
                 <div className=" space-y-4">

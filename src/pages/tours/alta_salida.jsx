@@ -21,6 +21,12 @@ const ToursAltaSalida = () => {
   const [hora_regreso, setRegreso] = useState();
 
   const [status, setStatus] = useState('99');
+  const [applyForOperator, setApplyForOperator] = useState(0);
+  
+  const opcionesAplicaOperador = [
+    { value: 1, label: 'Sí' },
+    { value: 0, label: 'No' }
+  ];
 
   const diasSemana = [
     { value: 'Lunes', label: 'Lunes' },
@@ -101,7 +107,8 @@ const ToursAltaSalida = () => {
               hora_salida,
               hora_regreso,
               status,
-              tour_id
+              tour_id,
+              apply_for_operator: applyForOperator
             },
           });
           console.log(res);
@@ -198,6 +205,24 @@ const ToursAltaSalida = () => {
                   type="number"
                   defaultValue={status}
                 />
+
+                {/* Aplica para Tour Operadores */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-200">
+                    ¿Aplica para Tour Operadores? *
+                  </label>
+                  <Select
+                    styles={customStyles}
+                    placeholder="Seleccione una opción"
+                    options={opcionesAplicaOperador}
+                    value={opcionesAplicaOperador.find(option => option.value === applyForOperator) || null}
+                    onChange={(selected) => setApplyForOperator(selected?.value || 0)}
+                    isSearchable={false}
+                    className="react-select"
+                    classNamePrefix="select"
+                    required
+                  />
+                </div>
 
 
                 <div className=" space-y-4">

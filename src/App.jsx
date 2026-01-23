@@ -66,6 +66,9 @@ const FotografiasAlta = lazy(() => import("./pages/fotografias/alta"));
 
 const Ventas = lazy(() => import("./pages/ventas"));
 
+const VentasOperadores = lazy(() => import("./pages/ventasOperadores"));
+const VentasOperadoresCancel = lazy(() => import("./pages/ventasOperadores/cancel"));
+
 const ReservacionesModificar = lazy(() => import("./pages/reservaciones/modificar"));
 const ReservacionesCancelar = lazy(() => import("./pages/reservaciones/cancelar"));
 const ReservacionesImprimir = lazy(() => import("./pages/reservaciones/imprimir"));
@@ -167,6 +170,9 @@ function App() {
           <Route path="fotografias/alta" element={<FotografiasAlta />} />
 
           <Route path="ventas" element={<Ventas />} />
+
+          <Route path="ventasOperadores" element={<VentasOperadores />} />
+          <Route path="ventasOperadores/cancel" element={<VentasOperadoresCancel />} />
 
           <Route path="reservaciones/modificar" element={<ReservacionesModificar />} />
           <Route path="reservaciones/cancelar" element={<ReservacionesCancelar />} />

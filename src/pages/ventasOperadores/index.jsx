@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import clienteAxios from '../../configs/axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,22 +7,42 @@ import { Spanish } from 'flatpickr/dist/l10n/es.js';
 import QRCode from 'react-qr-code';
 import jsPDF from 'jspdf';
 import qrcode from 'qrcode';
+import Swal from 'sweetalert2';
+import { loadStripe } from '@stripe/stripe-js';
+import { useNavigate } from "react-router-dom";
+import { UserContext } from "../context/userContext";
+
+// Initialize Stripe
+let stripePromise;
+// Update the getStripe function to use the latest Stripe.js
+const getStripe = () => {
+    if (!stripePromise) {
+        stripePromise = loadStripe('pk_live_51S5vt43kq9gDlybwvDJBd6hVCE0XA0l7sXogrP43DCi0nfCBITtHicGPetLzcD86BmYEMrm0Z6YPiW2X8WKwwgr7007hGawoTN', {
+            // Ensure we're using the latest API version
+            apiVersion: '2023-10-16'
+        });
+    }
+    return stripePromise;
+};
 
 //import 'flatpickr/dist/themes/material_red.css';
 
 
 const VentasPage = () => {
+    const userCtx = useContext(UserContext);
+    const { user, verifyingToken } = userCtx;
+    const navigate = useNavigate();
+
     const [currentStep, setCurrentStep] = useState(1);
     const [tourData, setTourData] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [ticketQuantities, setTicketQuantities] = useState({
-        entradaTipoA: 0, // General
-        entradaTipoB: 0, // Mexicano
-        entradaTipoC: 0, // Especial
+        entradaTipoA: 1, // General - Default to 1 ticket
     });
     const [availableTimes, setAvailableTimes] = useState([]);
     const [selectedTime, setSelectedTime] = useState('');
     const [contactInfo, setContactInfo] = useState({
+        id: '',
         nombres: '',
         apellidos: '',
         telefono: '',
@@ -34,9 +54,13 @@ const VentasPage = () => {
     const [reservationId, setReservationId] = useState(null);
     const [clientExist, setClientExist] = useState(null);
     const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
-    const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
+    const [stripeLoading, setStripeLoading] = useState(false);
 
     const tourId = 24;
+
+    // Stripe configuration for operators
+    const STRIPE_PRODUCT = 'price_1SAzls3CVvaJXMYXmwRwkCOK'; // Replace with your actual Stripe price ID for operators
+    const TICKET_PRICE = 215; // Precio fijo para operadores
 
 
     // Función para generar PDF con información de compra
@@ -201,9 +225,9 @@ const VentasPage = () => {
                         xPos += colWidths[0];
                         pdf.text(ticketQuantities.entradaTipoA.toString(), xPos, yPosition);
                         xPos += colWidths[1];
-                        pdf.text('$270.00', xPos, yPosition);
+                        pdf.text('$215.00', xPos, yPosition);
                         xPos += colWidths[2];
-                        pdf.text(`$${(ticketQuantities.entradaTipoA * 270).toLocaleString('es-MX')}`, xPos, yPosition);
+                        pdf.text(`$${(ticketQuantities.entradaTipoA * 215).toLocaleString('es-MX')}`, xPos, yPosition);
                         yPosition += 6;
                     }
 
@@ -238,9 +262,9 @@ const VentasPage = () => {
                     // Total
                     pdf.setFont('helvetica', 'bold');
                     pdf.setFontSize(12);
-                    xPos = pageWidth - margin - pdf.getTextWidth(`$${((ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`);
+                    xPos = pageWidth - margin - pdf.getTextWidth(`$${((ticketQuantities.entradaTipoA * 215) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`);
                     pdf.text('TOTAL:', pageWidth - margin - 60, yPosition);
-                    pdf.text(`$${((ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`, xPos, yPosition);
+                    pdf.text(`$${((ticketQuantities.entradaTipoA * 215) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65)).toLocaleString('es-MX')} MXN`, xPos, yPosition);
 
                     yPosition += 15;
 
@@ -285,8 +309,82 @@ const VentasPage = () => {
         }
     };
 
+    // Track initialization with useRef
+    const initialized = useRef(false);
+
+    // Initialize user data only once
+    if (!initialized.current) {
+        initialized.current = true;
+
+        const token = localStorage.getItem("token");
+                
+        if (!token) {
+            console.log('No token found, redirecting to /');
+            navigate("/");
+        } else {
+        
+            (async () => {
+                try {
+                    const result = await verifyingToken();
+                   
+                    if (result) {
+                        setContactInfo({
+                            id: result[0].id || '',
+                            nombres: result[0].nombres || '',
+                            apellidos: result[0].apellidos || '',
+                            telefono: result[0].telefono || '',
+                            correo: result[0].correo || '',
+                            password: '',
+                        });
+                    } else {
+                        console.log('result is null or undefined');
+                    }
+                } catch (error) {
+                    console.error('Error al cargar los datos del usuario:', error);
+                    toast.error('Error al cargar los datos del usuario');
+                    navigate("/");
+                }
+            })();
+        }
+    }
+
 
     // Fetch Tour Data on component mount
+    // Verificar si hay una sesión de Stripe en la URL
+    useEffect(() => {
+        const checkStripeSession = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const sessionId = params.get('session_id');
+
+            if (sessionId) {
+                try {
+                    // Limpiar la URL
+                    window.history.replaceState({}, document.title, '/ventasOperadores');
+
+                    // Verificar el estado del pago
+                    const response = await clienteAxios.get(`/venta/verificar-sesion-stripe?session_id=${sessionId}`);
+
+                    if (response.data.success && response.data.reservacion) {
+                        // Mostrar éxito
+                        setReservationId(response.data.reservacion.id_reservacion);
+                        setClientExist(response.data.reservacion.clienteExiste);
+                        setShowQR(true);
+
+                        // Mostrar mensaje de éxito
+                        toast.success('¡Pago procesado exitosamente!');
+                    } else {
+                        throw new Error('No se pudo verificar el pago');
+                    }
+                } catch (error) {
+                    console.error('Error al verificar sesión de Stripe:', error);
+                    toast.error('Hubo un error al verificar el pago. Por favor contacta a soporte.');
+                }
+            }
+        };
+
+        checkStripeSession();
+    }, []);
+
     useEffect(() => {
         const fetchTourData = async () => {
 
@@ -312,14 +410,14 @@ const VentasPage = () => {
     const handleQtyChange = (type, amount) => {
         setTicketQuantities(prev => ({
             ...prev,
-            [type]: Math.max(0, prev[type] + amount)
+            [type]: Math.max(1, Math.min(30, prev[type] + amount)) // Keep between 1 and 30
         }));
     };
 
-    const totalVisitantes = Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0);
+    const totalVisitantes = ticketQuantities.entradaTipoA; // Only count general admission tickets
 
     const handleCheckHorarios = async () => {
-        if (totalVisitantes === 0 || totalVisitantes > 30) {
+        if (totalVisitantes < 1 || totalVisitantes > 30) {
             toast.warn('Debes seleccionar entre 1 y 30 visitantes.');
             return;
         }
@@ -340,9 +438,9 @@ const VentasPage = () => {
                 render({ data }) {
                     const response = data;
                     if (response.data?.horarios?.length > 0) {
-                        const available = response.data.horarios.filter(h => h.disponible);
+                        const available = response.data.horarios.filter(h => h.disponible && h.applyForOperator === 1);
                         if (available.length > 0) {
-                            setAvailableTimes(response.data.horarios);
+                            setAvailableTimes(response.data.horarios.filter(h => h.applyForOperator === 1));
                             return 'Horarios disponibles. Ya puedes elegir tu horario';
                         } else {
                             setAvailableTimes([]);
@@ -359,33 +457,111 @@ const VentasPage = () => {
         });
     };
 
-    const CardPaymentModal = ({ onConfirm, onCancel }) => (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl">
-                <div className="text-center">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Confirmar Pago con Tarjeta</h3>
-                    <p className="text-slate-600 dark:text-slate-300 mb-6">¿Ya recibiste el pago?</p>
 
-                    <div className="flex justify-center space-x-4">
-                        <button
-                            onClick={onCancel}
-                            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={onConfirm}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                        >
-                            Confirmar Pago
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 
-    const handlePayment = async (type = 'venta') => {
+    const handleStripePayment = async () => {
+        try {
+            setStripeLoading(true);
+
+            // Validar datos requeridos
+            if (!selectedDate || !selectedTime || !contactInfo.nombres || !contactInfo.correo || totalVisitantes === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Por favor completa todos los campos requeridos',
+                    confirmButtonColor: '#a01e24'
+                });
+                return;
+            }
+
+            // Verificar disponibilidad
+            const formattedDate = selectedDate.toISOString().split('T')[0];
+            const disponibilidad = await clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${totalVisitantes}`);
+           
+            const horarioSeleccionado = disponibilidad.data?.horarios?.find(h => h.hora_salida === selectedTime && h.disponible);
+            if (!horarioSeleccionado) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No hay disponibilidad',
+                    text: 'No hay suficientes boletos disponibles para el horario seleccionado',
+                    confirmButtonColor: '#a01e24'
+                });
+                return;
+            }
+
+            // Mostrar loading
+            Swal.fire({
+                title: 'Preparando pago',
+                text: 'Estamos procesando tu solicitud...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => { Swal.showLoading(); }
+            });
+
+            // Preparar items para Stripe
+            const lineItems = [];
+            if (ticketQuantities.entradaTipoA > 0) {
+                lineItems.push({ price: STRIPE_PRODUCT, quantity: ticketQuantities.entradaTipoA });
+            }
+
+            const totalCalculado = (215 * ticketQuantities.entradaTipoA);
+
+            // Crear sesión de checkout en el backend
+            const response = await clienteAxios.post('/venta/stripe/create-checkout-session-operator', {
+                lineItems,
+                customerEmail: contactInfo.correo,
+                successUrl: `${window.location.origin}/ventasOperadores?session_id={CHECKOUT_SESSION_ID}`,
+                cancelUrl: `${window.location.origin}/ventasOperadores/cancel`,
+                metadata: {
+                    no_boletos: totalVisitantes.toString(),
+                    nombre_cliente: contactInfo.nombres + " " +contactInfo.apellidos,
+                    cliente_id: contactInfo.id,
+                    correo: contactInfo.correo,
+                    tourId: tourId.toString(),
+                    fecha_ida: selectedDate.toISOString().split('T')[0],
+                    horaCompleta: selectedTime,
+                    total: totalCalculado.toString()
+                }
+            });
+            
+            if (response.data.url) {
+                // Redirigir a Stripe Checkout
+                 window.location.href = response.data.url;
+            } else {
+                throw new Error('No se pudo iniciar el proceso de pago');
+            }
+            
+        } catch (error) {
+            console.error('Error al procesar el pago con Stripe:', error);
+            let errorMessage = 'Ocurrió un error al procesar tu pago. Por favor, intenta nuevamente.';
+            
+            // Handle different types of errors
+            if (error.response) {
+                // Server responded with an error status code (4xx, 5xx)
+                errorMessage = error.response.data?.error || error.response.data?.message || error.response.statusText || errorMessage;
+            } else if (error.request) {
+                // Request was made but no response was received
+                errorMessage = 'No se recibió respuesta del servidor. Por favor, verifica tu conexión a internet.';
+            } else if (error.message) {
+                // Something happened in setting up the request
+                errorMessage = error.message;
+            }
+            
+            // Show error message
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error al procesar el pago',
+                text: errorMessage,
+                confirmButtonColor: '#a01e24',
+                confirmButtonText: 'Entendido'
+            });
+        } finally {
+            setStripeLoading(false);
+            //Swal.close();
+        }
+    };
+
+    const handlePayment = async () => {
         try {
             // Deshabilitar botones
             setIsPaymentInProgress(true);
@@ -400,7 +576,7 @@ const VentasPage = () => {
 
             const tipos_boletos = JSON.stringify({ tipoA, tipoB, tipoC });
             const visitantes = totalVisitantes;
-            const totalCalculado = (270 * tipoA) + (130 * tipoB) + (65 * tipoC);
+            const totalCalculado = (215 * tipoA) + (130 * tipoB) + (65 * tipoC);
 
             const nombre = contactInfo.nombres.trim();
             const apellidos = contactInfo.apellidos.trim();
@@ -426,13 +602,9 @@ const VentasPage = () => {
                 total: totalCalculado
             });
 
-            // Realizar la solicitud de creación de venta
-            let endpoint = null;
-            if (type == 'Cortesia') {
-                endpoint = '/venta/crear-admin-cortesia';
-            } else {
-                endpoint = '/venta/crear-admin';
-            }
+
+            const endpoint = '/venta/crear-admin';
+
             const response = await clienteAxios.post(endpoint, {
                 "no_boletos": parseInt(visitantes),
                 "tipos_boletos": tipos_boletos,
@@ -446,8 +618,7 @@ const VentasPage = () => {
                 "tourId": tourId,
                 "fecha_ida": fecha,
                 "horaCompleta": horario,
-                "total": totalCalculado,
-                "metodo_pago": type
+                "total": totalCalculado
             });
 
             console.log('Respuesta de la API:', response.data);
@@ -499,7 +670,7 @@ const VentasPage = () => {
             case 3:
                 return <Step3 contactInfo={contactInfo} setContactInfo={setContactInfo} isLogin={isLogin} setIsLogin={setIsLogin} />;
             case 4:
-                return <Step4 tourData={tourData} selectedDate={selectedDate} selectedTime={selectedTime} ticketQuantities={ticketQuantities} contactInfo={contactInfo} totalVisitantes={totalVisitantes} />;
+                return <Step4 tourData={tourData} selectedDate={selectedDate} selectedTime={selectedTime} ticketQuantities={ticketQuantities} contactInfo={contactInfo} totalVisitantes={totalVisitantes} TICKET_PRICE={TICKET_PRICE} />;
             default:
                 return <Step1 />;
         }
@@ -559,49 +730,23 @@ const VentasPage = () => {
                                             )}
                                             {currentStep === 4 && (
                                                 <>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
-                                                        id="btn-pagar"
-                                                        onClick={() => handlePayment('Efectivo')}
-                                                        disabled={isPaymentInProgress}
-                                                    >
-                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar en efectivo'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
-                                                        onClick={() => setShowCardPaymentModal(true)}
-                                                        disabled={isPaymentInProgress}
-                                                    >
-                                                        {isPaymentInProgress ? 'Procesando...' : 'Pagar con tarjeta'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn ${isPaymentInProgress ? 'btn-disabled' : 'btn-success'}`}
-                                                        id="btn-cortesia"
-                                                        onClick={() => handlePayment('Cortesia')}
-                                                        disabled={isPaymentInProgress}
-                                                    >
-                                                        {isPaymentInProgress ? 'Procesando...' : 'Cortesía'}
-                                                    </button>
+                                                    <div className="flex flex-col sm:flex-row gap-3">
+                                                        <button
+                                                            type="button"
+                                                            className={`btn btn-primary ${stripeLoading ? 'btn-disabled' : ''}`}
+                                                            onClick={handleStripePayment}
+                                                            disabled={stripeLoading}
+                                                        >
+                                                            {stripeLoading ? 'Procesando...' : 'Pagar'}
+                                                        </button>
+                                                    </div>
+
                                                 </>
                                             )}
                                         </div>
                                     </div>
                                 </form>
-                                {showCardPaymentModal && (
-                                    <CardPaymentModal
-                                        onConfirm={async () => {
-                                            setShowCardPaymentModal(false);
-                                            await handlePayment('Pos_tarjeta');
-                                        }}
-                                        onCancel={() => {
-                                            setShowCardPaymentModal(false);
 
-                                        }}
-                                    />
-                                )}
                             </div>
                         </div>
                     </div>
@@ -669,6 +814,7 @@ const VentasPage = () => {
                                                 });
                                                 setSelectedTime('');
                                                 setContactInfo({
+                                                    id: '',
                                                     nombres: '',
                                                     apellidos: '',
                                                     telefono: '',
@@ -758,7 +904,7 @@ const VentasPage = () => {
                                                             <div class="ticket-data">
                                                                 <p><strong>Fecha de Compra:</strong> ${new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
                                                                 <p><strong>Tipo de Boleto:</strong>${(ticketQuantities.entradaTipoA > 0 ? 'General' : ticketQuantities.entradaTipoB > 0 ? 'Mexicano' : 'Especial')} </p>
-                                                                <p><strong>Total:</strong> $${(ticketQuantities.entradaTipoA * 270 + ticketQuantities.entradaTipoB * 130 + ticketQuantities.entradaTipoC * 65).toFixed(2)}</p>
+                                                                <p><strong>Total:</strong> $${(ticketQuantities.entradaTipoA * 215 + ticketQuantities.entradaTipoB * 130 + ticketQuantities.entradaTipoC * 65).toFixed(2)}</p>
 
 
                                                                 <p><strong>Fecha de Visita:</strong> ${selectedDate?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -889,14 +1035,32 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
     <div className="space-y-6">
         <div className="text-center">
             <h4 className="card-title text-slate-900 dark:text-white">Selecciona cantidad y horario</h4>
-            <p className="text-slate-600 dark:text-slate-300 mt-2">Elige el tipo y cantidad de boletos, luego consulta horarios disponibles</p>
+            <p className="text-slate-600 dark:text-slate-300 mt-2">Elige la cantidad de boletos y consulta horarios disponibles</p>
         </div>
 
-        {/* Ticket Types */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <TicketInput type="entradaTipoA" label="Entrada General" price="270.00" value={ticketQuantities.entradaTipoA} onChange={handleQtyChange} />
-            <TicketInput type="entradaTipoB" label="Ciudadano Mexicano" price="130.00" value={ticketQuantities.entradaTipoB} onChange={handleQtyChange} />
-            <TicketInput type="entradaTipoC" label="Estudiante / Adulto Mayor / Niño (-12)" price="65.00" value={ticketQuantities.entradaTipoC} onChange={handleQtyChange} />
+        {/* Single Ticket Type for Operators */}
+        <div className="text-center py-4">
+            <p className="text-lg font-medium text-slate-700 dark:text-slate-200 mb-2">Entrada General</p>
+            <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">$215.00 MXN</p>
+            <div className="flex items-center justify-center mt-4 space-x-4">
+                <button
+                    type="button"
+                    onClick={() => handleQtyChange('entradaTipoA', -1)}
+                    className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300 flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
+                    disabled={ticketQuantities.entradaTipoA <= 1}
+                >
+                    -
+                </button>
+                <span className="text-xl font-medium w-12 text-center">{ticketQuantities.entradaTipoA}</span>
+                <button
+                    type="button"
+                    onClick={() => handleQtyChange('entradaTipoA', 1)}
+                    className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300 flex items-center justify-center hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
+                    disabled={ticketQuantities.entradaTipoA >= 10}
+                >
+                    +
+                </button>
+            </div>
         </div>
 
         {/* Time Selection */}
@@ -1059,8 +1223,8 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
 };
 
 // Step 4: Summary
-const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contactInfo, totalVisitantes }) => {
-    const totalAmount = (ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65);
+const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contactInfo, totalVisitantes, TICKET_PRICE }) => {
+    const totalAmount = ticketQuantities.entradaTipoA * TICKET_PRICE; // Using the TICKET_PRICE constant
 
     return (
         <div className="space-y-6">

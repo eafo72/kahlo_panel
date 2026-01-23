@@ -36,7 +36,8 @@ export const UserProvider = ({ children }) => {
 
         if (res.data) {
           setUser(res.data);
-          setAuthStatus(true)
+          setAuthStatus(true);
+          return res.data;
         } else {
           toast.error(res.data.msg, {
             position: "top-right",
@@ -50,6 +51,7 @@ export const UserProvider = ({ children }) => {
           });
           localStorage.removeItem("token"); // Eliminar token si es inválido
           navigate("/");
+          return null;
         }
       } catch (error) {
         delete clienteAxios.defaults.headers.common['x-auth-token']
@@ -64,11 +66,14 @@ export const UserProvider = ({ children }) => {
           progress: undefined,
           theme: "dark",
         });
+        navigate("/");
+        return null;
       }
     } else {
       delete clienteAxios.defaults.headers.common['x-auth-token']
       console.log('No existe token')
       navigate("/");
+      return null;
     }
   }
 
@@ -94,7 +99,7 @@ export const UserProvider = ({ children }) => {
             } else if (res.data[0].isSpecialist == 1) {
               window.location.href = "/colaboradores";
             } else if (res.data[0].isOperator == 1) {
-              window.location.href = "/ventas";
+              window.location.href = "/ventasOperadores";
             } else {
               toast.error("Lo sentimos el acceso solo es para administradores", {
                 position: "top-right",

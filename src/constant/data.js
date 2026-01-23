@@ -287,7 +287,7 @@ export const menuItemsOperator = [
   {
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
-    link: "ventas",
+    link: "ventasOperadores",
   }
 ];
 

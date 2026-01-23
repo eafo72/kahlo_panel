@@ -55,6 +55,14 @@ const ToursSalidas = () => {
       },
     },
     {
+      Header: "Aplica Tour Operador",
+      accessor: "applyForOperator",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+
+    {
       Header: "action",
       accessor: "action",
       Cell: (row) => {
