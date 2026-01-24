@@ -66,10 +66,7 @@ const OperatorHistory = () => {
                 return (
                     <div className="flex justify-start">
                         <button
-                            onClick={() => {
-                                localStorage.setItem("EditSessionId", row.row.original.session_id);
-                                navigate("/ventasOperadores/historialDetalle");
-                            }}
+                            onClick={() => navigate(`/ventasOperadores/asignarBoletos/${row.row.original.session_id}`)}
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                             <Icon icon="heroicons:clipboard-document-list" className="mr-1" />
@@ -84,11 +81,11 @@ const OperatorHistory = () => {
     const columns = useMemo(() => COLUMNS, [navigate]);
 
     const getOperatorHistory = async () => {
-        
+
         try {
             //obtener info del usuario
             const result = await verifyingToken();
-            
+
             const res = await clienteAxios.get(`/venta/comprasByOperator/${result[0].id}`);
             //console.log(res.data);
             setDatos(res.data.data);
@@ -147,7 +144,7 @@ const OperatorHistory = () => {
             <Card noborder>
                 <div className="md:flex justify-between items-center mb-6">
                     <h4 className="card-title">Historial de Compras</h4>
-                    
+
                     <div className="flex items-right">
                         <select style={{ maxWidth: "150px", marginRight: "10px" }}
                             value={pageSize}

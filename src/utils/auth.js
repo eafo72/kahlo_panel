@@ -34,6 +34,7 @@ const routePermissions = {
   '/ventasOperadores/cancel':     [ROLES.OPERATOR],
   '/ventasOperadores/finalizada': [ROLES.OPERATOR],
   '/ventasOperadores/historial':  [ROLES.OPERATOR],
+  '/ventasOperadores/asignarBoletos': [ROLES.OPERATOR],
 };
 
 // Function to get user role based on user object
