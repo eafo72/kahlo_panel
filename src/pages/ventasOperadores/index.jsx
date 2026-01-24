@@ -510,7 +510,7 @@ const VentasPage = () => {
             const response = await clienteAxios.post('/venta/stripe/create-checkout-session-operator', {
                 lineItems,
                 customerEmail: contactInfo.correo,
-                successUrl: `${window.location.origin}/ventasOperadores?session_id={CHECKOUT_SESSION_ID}`,
+                successUrl: `${window.location.origin}/ventasOperadores/finalizada?session_id={CHECKOUT_SESSION_ID}`,
                 cancelUrl: `${window.location.origin}/ventasOperadores/cancel`,
                 metadata: {
                     no_boletos: totalVisitantes.toString(),

@@ -288,7 +288,13 @@ export const menuItemsOperator = [
     title: "Punto de Venta",
     icon: "heroicons:banknotes",
     link: "ventasOperadores",
-  }
+  },
+  {
+    title: "Historial de Compras",
+    icon: "heroicons:table-cells",
+    link: "ventasOperadores/historial",
+  },
+
 ];
 
 

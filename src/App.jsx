@@ -68,6 +68,8 @@ const Ventas = lazy(() => import("./pages/ventas"));
 
 const VentasOperadores = lazy(() => import("./pages/ventasOperadores"));
 const VentasOperadoresCancel = lazy(() => import("./pages/ventasOperadores/cancel"));
+const VentasOperadoresFinalizada = lazy(() => import("./pages/ventasOperadores/finalizada"));
+const VentasOperadoresHistorial = lazy(() => import("./pages/ventasOperadores/historial"));
 
 const ReservacionesModificar = lazy(() => import("./pages/reservaciones/modificar"));
 const ReservacionesCancelar = lazy(() => import("./pages/reservaciones/cancelar"));
@@ -173,6 +175,8 @@ function App() {
 
           <Route path="ventasOperadores" element={<VentasOperadores />} />
           <Route path="ventasOperadores/cancel" element={<VentasOperadoresCancel />} />
+          <Route path="ventasOperadores/finalizada" element={<VentasOperadoresFinalizada />} />
+          <Route path="ventasOperadores/historial" element={<VentasOperadoresHistorial />} />
 
           <Route path="reservaciones/modificar" element={<ReservacionesModificar />} />
           <Route path="reservaciones/cancelar" element={<ReservacionesCancelar />} />
