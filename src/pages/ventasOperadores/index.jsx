@@ -59,7 +59,7 @@ const VentasPage = () => {
     const tourId = 24;
 
     // Stripe configuration for operators
-    const STRIPE_PRODUCT = 'price_1SAzls3CVvaJXMYXmwRwkCOK'; // Replace with your actual Stripe price ID for operators
+    const STRIPE_PRODUCT = 'price_1StufU3CVvaJXMYXLXkf75Yk'; // Replace with your actual Stripe price ID for operators
     const TICKET_PRICE = 215; // Precio fijo para operadores
 
 
@@ -437,6 +437,7 @@ const VentasPage = () => {
             success: {
                 render({ data }) {
                     const response = data;
+                    //console.log(response);
                     if (response.data?.horarios?.length > 0) {
                         const available = response.data.horarios.filter(h => h.disponible && h.applyForOperator === 1);
                         if (available.length > 0) {
@@ -1165,9 +1166,9 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
                             <input
                                 type="text"
                                 id="nombres"
-                                className="form-control"
+                                className="form-control bg-gray-100"
                                 value={contactInfo.nombres}
-                                onChange={handleChange}
+                                readOnly
                                 placeholder="Ingresa tu nombre"
                             />
                         </div>
@@ -1179,9 +1180,9 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
                             <input
                                 type="text"
                                 id="apellidos"
-                                className="form-control"
+                                className="form-control bg-gray-100"
                                 value={contactInfo.apellidos}
-                                onChange={handleChange}
+                                readOnly
                                 placeholder="Ingresa tus apellidos"
                             />
                         </div>
@@ -1195,9 +1196,9 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
                             <input
                                 type="tel"
                                 id="telefono"
-                                className="form-control"
+                                className="form-control bg-gray-100"
                                 value={contactInfo.telefono}
-                                onChange={handleChange}
+                                readOnly
                                 placeholder="Ingresa tu teléfono"
                             />
                         </div>
@@ -1209,9 +1210,9 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
                             <input
                                 type="email"
                                 id="correo"
-                                className="form-control"
+                                className="form-control bg-gray-100"
                                 value={contactInfo.correo}
-                                onChange={handleChange}
+                                readOnly
                                 placeholder="Ingresa tu correo electrónico"
                             />
                         </div>

@@ -83,6 +83,11 @@ export const menuItems = [
     link: "historial",
   },
   {
+    title: "Historial Operadores",
+    icon: "heroicons:table-cells",
+    link: "historialOperadores",
+  },
+  {
     title: "Ventas Canceladas",
     icon: "heroicons:table-cells",
     link: "canceladas",
@@ -172,6 +177,11 @@ export const menuItemsAdministrador = [
     link: "historial",
   },
   {
+    title: "Historial Operadores",
+    icon: "heroicons:table-cells",
+    link: "historialOperadores",
+  },
+  {
     title: "Ventas Canceladas",
     icon: "heroicons:table-cells",
     link: "canceladas",
@@ -258,6 +268,11 @@ export const menuItemsInvestor = [
     title: "Historial",
     icon: "heroicons:table-cells",
     link: "historial",
+  },
+  {
+    title: "Historial Operadores",
+    icon: "heroicons:table-cells",
+    link: "historialOperadores",
   },
 ];
 

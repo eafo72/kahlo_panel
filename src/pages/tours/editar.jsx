@@ -7,6 +7,8 @@ import Button from "@/components/ui/Button";
 import DatePicker, { DateObject } from "react-multi-date-picker";
 import DatePanel from "react-multi-date-picker/plugins/date_panel";
 import DateIcon from "react-multi-date-picker/components/icon";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "react-multi-date-picker/styles/layouts/mobile.css";
 
 import useDarkMode from "@/hooks/useDarkMode";
@@ -42,6 +44,8 @@ const ToursEditar = () => {
 
   const [guias, setGuias] = useState();
   const [fechas_no_disponibles, setFechasNoDisponibles] = useState();
+  const [fechashorarios_no_disponibles, setFechasHorariosNoDisponibles] = useState();
+  const [nuevaFechaIndex, setNuevaFechaIndex] = useState(null);
 
   const [allempresas, setAllEmpresas] = useState([]);
   const [allcategorias, setAllCategorias] = useState([]);
@@ -151,6 +155,20 @@ const ToursEditar = () => {
         fechas_no_disponiblesNEW.push(item);
       }
       setFechasNoDisponibles(fechas_no_disponiblesNEW);
+
+      // Cargar fechas con horas si existen
+      if (res.data.tour[0].fechashorarios_no_disponibles) {
+        const fechas_con_horasOLD = res.data.tour[0].fechashorarios_no_disponibles.split(";");
+        let fechas_con_horasNEW = [];
+        for (let i = 0; i < fechas_con_horasOLD.length - 1; i++) {
+          let item = fechas_con_horasOLD[i];
+          // Formato esperado: YYYY-MM-DD HH:mm
+          if (item && item.trim() !== "") {
+            fechas_con_horasNEW.push(item);
+          }
+        }
+        setFechasHorariosNoDisponibles(fechas_con_horasNEW);
+      }
 
       const guiasOLD = JSON.parse(res.data.tour[0].guias);
       //console.log(guiasOLD);
@@ -298,6 +316,28 @@ const ToursEditar = () => {
           });
         }
 
+        let listaFechasHorariosNoDisponibles = [];
+        
+        if (
+          Array.isArray(fechashorarios_no_disponibles) &&
+          fechashorarios_no_disponibles.length > 0
+        ) {
+          fechashorarios_no_disponibles.forEach((fecha) => {
+            if (fecha instanceof Date) {
+              // Es un objeto Date de react-datepicker
+              const year = fecha.getFullYear();
+              const month = String(fecha.getMonth() + 1).padStart(2, '0');
+              const day = String(fecha.getDate()).padStart(2, '0');
+              const hours = String(fecha.getHours()).padStart(2, '0');
+              const minutes = String(fecha.getMinutes()).padStart(2, '0');
+              listaFechasHorariosNoDisponibles.push(`${year}-${month}-${day} ${hours}:${minutes}`);
+            } else if (typeof fecha === 'string') {
+              // Ya viene en formato string
+              listaFechasHorariosNoDisponibles.push(fecha);
+            }
+          });
+        }
+
         const datos = {
           id,
           nombre,
@@ -319,8 +359,9 @@ const ToursEditar = () => {
           ciudad: ciudad,
           guias: listaGuias,
           fechas_no_disponibles: listaFechasNoDisponibles,
+          fechashorarios_no_disponibles: listaFechasHorariosNoDisponibles,
         };
-        console.log(datos);
+        //console.log(datos);
 
         try {
           const res = await clienteAxios({
@@ -330,7 +371,7 @@ const ToursEditar = () => {
             headers: { "Content-Type": "multipart/form-data" },
           });
 
-          console.log(res);
+          //console.log(res);
           navigate("/tours");
         } catch (error) {
           console.log(error);
@@ -529,6 +570,64 @@ const ToursEditar = () => {
                 plugins={[<DatePanel />]}
                 value={fechas_no_disponibles}
               />
+
+              {/*Fechas con horas*/}
+              <label className="block capitalize form-label  ">
+                Fechas y horarios no disponibles 
+              </label>
+
+              <div className="space-y-2">
+                {fechashorarios_no_disponibles && fechashorarios_no_disponibles.length > 0 ? (
+                  fechashorarios_no_disponibles.map((item, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <ReactDatePicker
+                        ref={index === nuevaFechaIndex ? (el) => {
+                          if (el) {
+                            setTimeout(() => el.setOpen(true), 100);
+                            setNuevaFechaIndex(null);
+                          }
+                        } : null}
+                        selected={item}
+                        onChange={(date) => {
+                          const nuevasFechas = [...fechashorarios_no_disponibles];
+                          nuevasFechas[index] = date;
+                          setFechasHorariosNoDisponibles(nuevasFechas);
+                        }}
+                        showTimeSelect
+                        dateFormat="yyyy-MM-dd HH:mm"
+                        timeFormat="HH:mm"
+                        timeIntervals={15}
+                        className="form-control flex-1"
+                        placeholderText="Seleccionar fecha y hora"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nuevasFechas = fechashorarios_no_disponibles.filter((_, i) => i !== index);
+                          setFechasHorariosNoDisponibles(nuevasFechas);
+                        }}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No hay fechas agregadas</p>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newIndex = (fechashorarios_no_disponibles || []).length;
+                    setFechasHorariosNoDisponibles([...(fechashorarios_no_disponibles || []), null]);
+                    setNuevaFechaIndex(newIndex);
+                  }}
+                  className="btn btn-dark btn-sm mt-2"
+                >
+                  Agregar fecha y hora
+                </button>
+              </div>
 
               {/*Empresa id*/}
               {user && user[0].isSuperAdmin == 1 ? (

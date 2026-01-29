@@ -9,6 +9,7 @@ const AsignarBoletos = () => {
     const navigate = useNavigate();
     const [boletos, setBoletos] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const cargarBoletos = async () => {
@@ -16,8 +17,9 @@ const AsignarBoletos = () => {
                 const response = await clienteAxios.get(`/venta/boletos-por-session/${sessionId}`);
                 setBoletos(response.data.data.map(boleto => ({
                     ...boleto,
-                    nombre_cliente: '',
-                    correo: ''
+                    nombre_cliente: boleto.nombre_cliente_asignado || '',
+                    correo: boleto.correo_asignado || '',
+                    correo_confirmacion: boleto.correo_asignado || ''
                 })));
             } catch (error) {
                 console.error('Error al cargar boletos:', error);
@@ -39,18 +41,45 @@ const AsignarBoletos = () => {
         setBoletos(nuevosBoletos);
     };
 
-    const handleSubmit = async (e) => {
+    const handleConfirmEmailChange = (index, value) => {
+        const nuevosBoletos = [...boletos];
+        nuevosBoletos[index] = {
+            ...nuevosBoletos[index],
+            correo_confirmacion: value
+        };
+        setBoletos(nuevosBoletos);
+    };
+
+    const handleSubmit = async (e, enviarCorreos = false) => {
         e.preventDefault();
+
+        // Prevenir múltiples envíos
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
         // Validar que todos los campos estén llenos
         const boletosIncompletos = boletos.some(boleto =>
-            !boleto.nombre_cliente?.trim() || !boleto.correo?.trim()
+            !boleto.nombre_cliente?.trim() || !boleto.correo?.trim() || !boleto.correo_confirmacion?.trim()
         );
         if (boletosIncompletos) {
+            setIsSubmitting(false);
             return Swal.fire({
                 icon: 'warning',
                 title: 'Campos incompletos',
                 text: 'Por favor, completa todos los campos de nombre y correo para cada boleto',
+                confirmButtonText: 'Entendido'
+            });
+        }
+        // Validar que los correos coincidan
+        const correosNoCoinciden = boletos.some(boleto => 
+            boleto.correo?.trim() !== boleto.correo_confirmacion?.trim()
+        );
+        if (correosNoCoinciden) {
+            setIsSubmitting(false);
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Correos no coinciden',
+                text: 'Por favor, asegúrate de que los correos electrónicos coincidan en ambos campos',
                 confirmButtonText: 'Entendido'
             });
         }
@@ -60,6 +89,7 @@ const AsignarBoletos = () => {
             return !emailRegex.test(boleto.correo.trim());
         });
         if (correoInvalido) {
+            setIsSubmitting(false);
             return Swal.fire({
                 icon: 'warning',
                 title: 'Correo inválido',
@@ -74,13 +104,18 @@ const AsignarBoletos = () => {
                     id: b.id,
                     nombre_cliente: b.nombre_cliente,
                     correo: b.correo
-                }))
+                })),
+                enviar_correos: enviarCorreos
             });
 
+            const mensaje = enviarCorreos 
+                ? '¡Guardado! La información ha sido actualizada y los correos han sido enviados'
+                : '¡Guardado! La información de los boletos ha sido actualizada';
+            
             await Swal.fire({
                 icon: 'success',
                 title: '¡Guardado!',
-                text: 'La información de los boletos ha sido actualizada',
+                text: mensaje,
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -88,6 +123,7 @@ const AsignarBoletos = () => {
             navigate('/ventasOperadores/historial');
         } catch (error) {
             console.error('Error al guardar:', error);
+            setIsSubmitting(false);
             Swal.fire('Error', 'No se pudo guardar la información', 'error');
         }
     };
@@ -137,6 +173,20 @@ const AsignarBoletos = () => {
                                     />
                                 </div>
                             </div>
+
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirmar correo electrónico
+                                </label>
+                                <input
+                                    type="email"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={boleto.correo_confirmacion || ''}
+                                    onChange={(e) => handleConfirmEmailChange(index, e.target.value)}
+                                    placeholder="Vuelve a escribir el correo electrónico para confirmar"
+                                />
+                            </div>
                         </div>
                     ))}
 
@@ -149,10 +199,22 @@ const AsignarBoletos = () => {
                             Cancelar
                         </button>
                         <button
-                            type="submit"
-                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleSubmit(e, true);
+                            }}
+                            disabled={isSubmitting}
+                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
                         >
-                            Guardar Cambios
+                            {isSubmitting ? 'Guardando...' : 'Guardar cambios y enviar boletos'}
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                        >
+                            {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
                     </div>
                 </form>

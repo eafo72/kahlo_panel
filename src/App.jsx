@@ -61,6 +61,7 @@ const ComentariosEditar = lazy(() => import("./pages/comentarios/editar"));
 const ComentariosBorrar = lazy(() => import("./pages/comentarios/borrar"));
 
 const Historial = lazy(() => import("./pages/historial"));
+const HistorialOperadores = lazy(() => import("./pages/historialOperadores"));
 
 const FotografiasAlta = lazy(() => import("./pages/fotografias/alta"));
 
@@ -169,6 +170,7 @@ function App() {
           <Route path="comentarios/borrar" element={<ComentariosBorrar />} />
 
           <Route path="historial" element={<Historial />} />
+          <Route path="historialOperadores" element={<HistorialOperadores />} />
 
           <Route path="fotografias/alta" element={<FotografiasAlta />} />
 
