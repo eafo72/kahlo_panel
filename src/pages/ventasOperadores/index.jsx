@@ -55,6 +55,8 @@ const VentasPage = () => {
     const [clientExist, setClientExist] = useState(null);
     const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
     const [stripeLoading, setStripeLoading] = useState(false);
+    const [cartItems, setCartItems] = useState([]);
+    const [showCart, setShowCart] = useState(false);
 
     const tourId = 24;
 
@@ -414,7 +416,55 @@ const VentasPage = () => {
         }));
     };
 
-    const totalVisitantes = ticketQuantities.entradaTipoA; // Only count general admission tickets
+    const totalVisitantes = ticketQuantities.entradaTipoA;
+
+    // Función para agregar item al carrito
+    const addToCart = () => {
+        if (!selectedDate || !selectedTime || totalVisitantes === 0) {
+            toast.warn('Debes seleccionar fecha, horario y cantidad de boletos');
+            return;
+        }
+
+        const cartItem = {
+            id: Date.now(), // ID único para el item
+            date: selectedDate,
+            time: selectedTime,
+            quantity: totalVisitantes,
+            unitPrice: TICKET_PRICE,
+            subtotal: totalVisitantes * TICKET_PRICE,
+            dateString: selectedDate.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })
+        };
+
+        setCartItems(prev => [...prev, cartItem]);
+        
+        // Resetear selección actual
+        setSelectedTime('');
+        setTicketQuantities({ entradaTipoA: 1 });
+        setAvailableTimes([]);
+        
+        toast.success('Se agregó al carrito correctamente');
+    };
+
+    // Función para eliminar item del carrito
+    const removeFromCart = (itemId) => {
+        setCartItems(prev => prev.filter(item => item.id !== itemId));
+        toast.success('Se eliminó del carrito');
+    };
+
+    // Función para calcular total del carrito
+    const getCartTotal = () => {
+        return cartItems.reduce((total, item) => total + item.subtotal, 0);
+    };
+
+    // Función para obtener total de visitantes del carrito
+    const getCartTotalVisitors = () => {
+        return cartItems.reduce((total, item) => total + item.quantity, 0);
+    };
 
     const handleCheckHorarios = async () => {
         if (totalVisitantes < 1 || totalVisitantes > 30) {
@@ -464,8 +514,19 @@ const VentasPage = () => {
         try {
             setStripeLoading(true);
 
+            // Validar que el carrito no esté vacío
+            if (cartItems.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Carrito vacío',
+                    text: 'Debes agregar al menos un boleto al carrito',
+                    confirmButtonColor: '#a01e24'
+                });
+                return;
+            }
+
             // Validar datos requeridos
-            if (!selectedDate || !selectedTime || !contactInfo.nombres || !contactInfo.correo || totalVisitantes === 0) {
+            if (!contactInfo.nombres || !contactInfo.correo) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Datos incompletos',
@@ -475,19 +536,21 @@ const VentasPage = () => {
                 return;
             }
 
-            // Verificar disponibilidad
-            const formattedDate = selectedDate.toISOString().split('T')[0];
-            const disponibilidad = await clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${totalVisitantes}`);
-           
-            const horarioSeleccionado = disponibilidad.data?.horarios?.find(h => h.hora_salida === selectedTime && h.disponible);
-            if (!horarioSeleccionado) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No hay disponibilidad',
-                    text: 'No hay suficientes boletos disponibles para el horario seleccionado',
-                    confirmButtonColor: '#a01e24'
-                });
-                return;
+            // Verificar disponibilidad para cada item del carrito
+            for (const item of cartItems) {
+                const formattedDate = item.date.toISOString().split('T')[0];
+                const disponibilidad = await clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${item.quantity}`);
+               
+                const horarioSeleccionado = disponibilidad.data?.horarios?.find(h => h.hora_salida === item.time && h.disponible);
+                if (!horarioSeleccionado) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'No hay disponibilidad',
+                        text: `No hay suficientes boletos disponibles para ${item.dateString} a las ${item.time}`,
+                        confirmButtonColor: '#a01e24'
+                    });
+                    return;
+                }
             }
 
             // Mostrar loading
@@ -500,12 +563,22 @@ const VentasPage = () => {
             });
 
             // Preparar items para Stripe
-            const lineItems = [];
-            if (ticketQuantities.entradaTipoA > 0) {
-                lineItems.push({ price: STRIPE_PRODUCT, quantity: ticketQuantities.entradaTipoA });
-            }
+            const totalAmount = getCartTotal();
+            const totalVisitors = getCartTotalVisitors();
+            
+            // Crear línea de items para Stripe (todos los boletos al mismo precio)
+            const lineItems = [{
+                price: STRIPE_PRODUCT,
+                quantity: totalVisitors
+            }];
 
-            const totalCalculado = (215 * ticketQuantities.entradaTipoA);
+            // Preparar metadata con todos los items del carrito
+            const cartItemsMetadata = cartItems.map(item => ({
+                date: item.date.toISOString().split('T')[0],
+                time: item.time,
+                quantity: item.quantity,
+                subtotal: item.subtotal
+            }));
 
             // Crear sesión de checkout en el backend
             const response = await clienteAxios.post('/venta/stripe/create-checkout-session-operator', {
@@ -514,14 +587,13 @@ const VentasPage = () => {
                 successUrl: `${window.location.origin}/ventasOperadores/finalizada?session_id={CHECKOUT_SESSION_ID}`,
                 cancelUrl: `${window.location.origin}/ventasOperadores/cancel`,
                 metadata: {
-                    no_boletos: totalVisitantes.toString(),
-                    nombre_cliente: contactInfo.nombres + " " +contactInfo.apellidos,
+                    no_boletos: totalVisitors.toString(),
+                    nombre_cliente: contactInfo.nombres + " " + contactInfo.apellidos,
                     cliente_id: contactInfo.id,
                     correo: contactInfo.correo,
                     tourId: tourId.toString(),
-                    fecha_ida: selectedDate.toISOString().split('T')[0],
-                    horaCompleta: selectedTime,
-                    total: totalCalculado.toString()
+                    cart_items: JSON.stringify(cartItemsMetadata),
+                    total: totalAmount.toString()
                 }
             });
             
@@ -567,17 +639,11 @@ const VentasPage = () => {
             // Deshabilitar botones
             setIsPaymentInProgress(true);
 
-            // Recolectar datos del formulario
-            const fecha = selectedDate ? selectedDate.toISOString().split('T')[0] : '';
-            const horario = selectedTime;
-
-            const tipoA = ticketQuantities.entradaTipoA;
-            const tipoB = ticketQuantities.entradaTipoB;
-            const tipoC = ticketQuantities.entradaTipoC;
-
-            const tipos_boletos = JSON.stringify({ tipoA, tipoB, tipoC });
-            const visitantes = totalVisitantes;
-            const totalCalculado = (215 * tipoA) + (130 * tipoB) + (65 * tipoC);
+            // Validar que el carrito no esté vacío
+            if (cartItems.length === 0) {
+                toast.error('El carrito está vacío');
+                return;
+            }
 
             const nombre = contactInfo.nombres.trim();
             const apellidos = contactInfo.apellidos.trim();
@@ -585,30 +651,38 @@ const VentasPage = () => {
             const correo = contactInfo.correo;
 
             // Validar datos requeridos
-            if (!fecha || !horario || !nombre || !apellidos || !correo || visitantes === 0) {
+            if (!nombre || !apellidos || !correo) {
                 toast.error('Faltan datos requeridos para procesar el pago');
                 return;
             }
 
+            const totalAmount = getCartTotal();
+            const totalVisitors = getCartTotalVisitors();
 
-            console.log('Preparando datos para pago:', {
+            console.log('Preparando datos para pago con carrito:', {
                 tourId,
-                fecha,
-                horario,
-                visitantes,
+                cartItems: cartItems.length,
+                totalVisitors,
                 nombre,
                 apellidos,
                 correo,
                 telefono,
-                total: totalCalculado
+                total: totalAmount
             });
 
+            // Preparar los items del carrito para el backend
+            const cartItemsForBackend = cartItems.map(item => ({
+                fecha: item.date.toISOString().split('T')[0],
+                hora: item.time,
+                cantidad: item.quantity,
+                subtotal: item.subtotal
+            }));
 
-            const endpoint = '/venta/crear-admin';
+            const endpoint = '/venta/crear-admin-carrito'; // Nuevo endpoint para carrito
 
             const response = await clienteAxios.post(endpoint, {
-                "no_boletos": parseInt(visitantes),
-                "tipos_boletos": tipos_boletos,
+                "no_boletos": parseInt(totalVisitors),
+                "cart_items": JSON.stringify(cartItemsForBackend),
                 "pagado": 1,
                 "comision": 2.3,
                 "status_traspaso": 1,
@@ -617,9 +691,7 @@ const VentasPage = () => {
                 "telefono": telefono,
                 "correo": correo,
                 "tourId": tourId,
-                "fecha_ida": fecha,
-                "horaCompleta": horario,
-                "total": totalCalculado
+                "total": totalAmount
             });
 
             console.log('Respuesta de la API:', response.data);
@@ -649,10 +721,15 @@ const VentasPage = () => {
             return toast.warn('Selecciona una fecha');
         }
         if (currentStep === 2) {
-            if (totalVisitantes === 0) return toast.warn('Selecciona al menos un boleto');
-            if (!selectedTime) return toast.warn('Selecciona un horario');
+            // Permitir continuar al carrito si ya hay items
+            if (cartItems.length === 0 && !selectedTime) {
+                return toast.warn('Selecciona al menos un boleto o agrega items al carrito primero');
+            }
         }
         if (currentStep === 3) {
+            if (cartItems.length === 0) return toast.warn('El carrito está vacío');
+        }
+        if (currentStep === 4) {
             if (!contactInfo.nombres || !contactInfo.apellidos || !contactInfo.correo) {
                 return toast.warn('Completa nombre, apellido y correo.');
             }
@@ -667,11 +744,13 @@ const VentasPage = () => {
             case 1:
                 return <Step1 selectedDate={selectedDate} setSelectedDate={setSelectedDate} tourData={tourData} />;
             case 2:
-                return <Step2 ticketQuantities={ticketQuantities} handleQtyChange={handleQtyChange} availableTimes={availableTimes} selectedTime={selectedTime} setSelectedTime={setSelectedTime} handleCheckHorarios={handleCheckHorarios} />;
+                return <Step2 ticketQuantities={ticketQuantities} handleQtyChange={handleQtyChange} availableTimes={availableTimes} selectedTime={selectedTime} setSelectedTime={setSelectedTime} handleCheckHorarios={handleCheckHorarios} addToCart={addToCart} cartItems={cartItems} setCurrentStep={setCurrentStep} />;
             case 3:
-                return <Step3 contactInfo={contactInfo} setContactInfo={setContactInfo} isLogin={isLogin} setIsLogin={setIsLogin} />;
+                return <StepCart cartItems={cartItems} removeFromCart={removeFromCart} getCartTotal={getCartTotal} getCartTotalVisitors={getCartTotalVisitors} setShowCart={setShowCart} />;
             case 4:
-                return <Step4 tourData={tourData} selectedDate={selectedDate} selectedTime={selectedTime} ticketQuantities={ticketQuantities} contactInfo={contactInfo} totalVisitantes={totalVisitantes} TICKET_PRICE={TICKET_PRICE} />;
+                return <Step3 contactInfo={contactInfo} setContactInfo={setContactInfo} isLogin={isLogin} setIsLogin={setIsLogin} />;
+            case 5:
+                return <Step4 tourData={tourData} cartItems={cartItems} contactInfo={contactInfo} getCartTotal={getCartTotal} getCartTotalVisitors={getCartTotalVisitors} />;
             default:
                 return <Step1 />;
         }
@@ -692,7 +771,7 @@ const VentasPage = () => {
                             </div>
                             <div className="card-body p-6">
                                 <div className="flex justify-center items-center gap-4 my-6">
-                                    {['Fecha', 'Boletos', 'Datos', 'Resumen'].map((label, index) => (
+                                    {['Fecha', 'Boletos', 'Carrito', 'Datos', 'Resumen'].map((label, index) => (
                                         <div key={index} className="flex items-center">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > index + 1 ? 'bg-primary-500 text-white' :
                                                 currentStep === index + 1 ? 'bg-primary-500 text-white' : 'bg-slate-200 text-slate-600'
@@ -720,7 +799,7 @@ const VentasPage = () => {
                                                     ← Atrás
                                                 </button>
                                             )}
-                                            {currentStep < 4 && (
+                                            {currentStep < 5 && (
                                                 <button
                                                     type="button"
                                                     className="btn btn-primary"
@@ -729,7 +808,7 @@ const VentasPage = () => {
                                                     Siguiente →
                                                 </button>
                                             )}
-                                            {currentStep === 4 && (
+                                            {currentStep === 5 && (
                                                 <>
                                                     <div className="flex flex-col sm:flex-row gap-3">
                                                         <button
@@ -809,11 +888,11 @@ const VentasPage = () => {
                                                 setCurrentStep(1);
                                                 setSelectedDate(null);
                                                 setTicketQuantities({
-                                                    entradaTipoA: 0,
-                                                    entradaTipoB: 0,
-                                                    entradaTipoC: 0,
+                                                    entradaTipoA: 1,
                                                 });
                                                 setSelectedTime('');
+                                                setAvailableTimes([]);
+                                                setCartItems([]);
                                                 setContactInfo({
                                                     id: '',
                                                     nombres: '',
@@ -904,13 +983,16 @@ const VentasPage = () => {
                                                                                                                         
                                                             <div class="ticket-data">
                                                                 <p><strong>Fecha de Compra:</strong> ${new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
-                                                                <p><strong>Tipo de Boleto:</strong>${(ticketQuantities.entradaTipoA > 0 ? 'General' : ticketQuantities.entradaTipoB > 0 ? 'Mexicano' : 'Especial')} </p>
-                                                                <p><strong>Total:</strong> $${(ticketQuantities.entradaTipoA * 215 + ticketQuantities.entradaTipoB * 130 + ticketQuantities.entradaTipoC * 65).toFixed(2)}</p>
+                                                                <p><strong>Tipo de Boleto:</strong> General</p>
+                                                                <p><strong>Total:</strong> ${getCartTotal().toFixed(2)}</p>
 
-
-                                                                <p><strong>Fecha de Visita:</strong> ${selectedDate?.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                                <p><strong>Hora de Visita:</strong> ${selectedTime}</p>
-                                                                <p><strong>Visitantes:</strong> ${totalVisitantes}</p>
+                                                                <p><strong>Detalles de la compra:</strong></p>
+                                                                {cartItems.map((item, index) => (
+                                                                    <p key={item.id}>
+                                                                        • {item.dateString} - {item.time} - {item.quantity} personas
+                                                                    </p>
+                                                                ))}
+                                                                <p><strong>Total de Visitantes:</strong> {getCartTotalVisitors()}</p>
 
                                                                 <div class="qr-code" id="qrcode"></div>
 
@@ -1032,7 +1114,7 @@ const Step1 = ({ selectedDate, setSelectedDate, tourData }) => {
 };
 
 // Step 2: Quantity and Time
-const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime, setSelectedTime, handleCheckHorarios }) => (
+const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime, setSelectedTime, handleCheckHorarios, addToCart, cartItems, setCurrentStep }) => (
     <div className="space-y-6">
         <div className="text-center">
             <h4 className="card-title text-slate-900 dark:text-white">Selecciona cantidad y horario</h4>
@@ -1105,10 +1187,141 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
                         ))}
                     </select>
                 </div>
+
+                {/* Botón para agregar al carrito y botón para continuar */}
+                {selectedTime && (
+                    <div className="mt-4 space-y-3">
+                        <button
+                            type="button"
+                            onClick={addToCart}
+                            className="btn btn-success w-full"
+                        >
+                            Agregar al Carrito →
+                        </button>
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (cartItems.length > 0) {
+                                        setCurrentStep(3); // Ir al carrito
+                                    } else {
+                                        toast.warn('El carrito está vacío. Agrega al menos un boleto primero.');
+                                    }
+                                }}
+                                className="btn btn-outline-primary"
+                                disabled={cartItems.length === 0}
+                            >
+                                {cartItems.length > 0 ? `Ver mi Carrito (${cartItems.length} items)` : 'Carrito vacío'}
+                            </button>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 text-center">
+                            Puedes agregar más fechas y horarios o continuar al carrito
+                        </p>
+                    </div>
+                )}
+
+                {/* Botón para ir al carrito incluso sin selección */}
+                {cartItems.length > 0 && !selectedTime && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 text-center">
+                            Ya tienes {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} en tu carrito
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentStep(3)}
+                            className="btn btn-primary w-full"
+                        >
+                            Ir al Carrito y Continuar →
+                        </button>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
+                            O selecciona más fechas/horarios si lo deseas
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     </div>
 );
+
+// Step 3: Cart View
+const StepCart = ({ cartItems, removeFromCart, getCartTotal, getCartTotalVisitors }) => {
+    if (cartItems.length === 0) {
+        return (
+            <div className="space-y-6">
+                <div className="text-center">
+                    <h4 className="card-title text-slate-900 dark:text-white">Tu Carrito</h4>
+                    <p className="text-slate-600 dark:text-slate-300 mt-2">Tu carrito está vacío</p>
+                </div>
+                <div className="card border border-slate-200 dark:border-slate-700 rounded-lg">
+                    <div className="card-body text-center py-8">
+                        <p className="text-slate-600 dark:text-slate-300">No has agregado ningún boleto al carrito</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Regresa a la sección anterior para agregar boletos</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <h4 className="card-title text-slate-900 dark:text-white">Tu Carrito</h4>
+                <p className="text-slate-600 dark:text-slate-300 mt-2">Revisa tus selecciones antes de continuar</p>
+            </div>
+
+            <div className="space-y-4">
+                {cartItems.map((item) => (
+                    <div key={item.id} className="card border border-slate-200 dark:border-slate-700 rounded-lg">
+                        <div className="card-body p-4">
+                            <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                    <h5 className="font-semibold text-slate-900 dark:text-white mb-2">
+                                        {item.dateString}
+                                    </h5>
+                                    <div className="space-y-1 text-sm">
+                                        <p className="text-slate-600 dark:text-slate-300">
+                                            <span className="font-medium">Horario:</span> {item.time}
+                                        </p>
+                                        <p className="text-slate-600 dark:text-slate-300">
+                                            <span className="font-medium">Visitantes:</span> {item.quantity} personas
+                                        </p>
+                                        <p className="text-slate-600 dark:text-slate-300">
+                                            <span className="font-medium">Precio unitario:</span> ${item.unitPrice} MXN
+                                        </p>
+                                        <p className="text-primary-600 dark:text-primary-400 font-semibold">
+                                            Subtotal: ${item.subtotal.toLocaleString('es-MX')} MXN
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeFromCart(item.id)}
+                                    className="btn btn-outline-danger btn-sm"
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="card border-2 border-primary-500 dark:border-primary-400 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                <div className="card-body p-6">
+                    <div className="text-center">
+                        <h5 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Total del Carrito</h5>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                            {getCartTotalVisitors()} visitantes en {cartItems.length} fechas
+                        </p>
+                        <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                            ${getCartTotal().toLocaleString('es-MX')} MXN
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const TicketInput = ({ type, label, price, value, onChange }) => (
     <div className="card border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-colors duration-200">
@@ -1224,9 +1437,7 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
 };
 
 // Step 4: Summary
-const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contactInfo, totalVisitantes, TICKET_PRICE }) => {
-    const totalAmount = ticketQuantities.entradaTipoA * TICKET_PRICE; // Using the TICKET_PRICE constant
-
+const Step4 = ({ tourData, cartItems, contactInfo, getCartTotal, getCartTotalVisitors }) => {
     return (
         <div className="space-y-6">
             <div className="text-center">
@@ -1237,20 +1448,19 @@ const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contact
             <div className="card border border-slate-200 dark:border-slate-700 rounded-lg">
                 <div className="card-body space-y-4">
                     <SummaryRow label="Tipo de experiencia" value={tourData?.nombre || ''} />
-                    <SummaryRow label="Fecha seleccionada" value={selectedDate?.toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    }) || ''} />
-                    <SummaryRow label="Horario" value={selectedTime} />
-
-                    {totalVisitantes > 0 && (
-                        <SummaryRow
-                            label="Visitantes"
-                            value={`${totalVisitantes} personas (${Object.entries(ticketQuantities).filter(([, qty]) => qty > 0).map(([type, qty]) => `${qty} ${type.replace('entradaTipo', '').replace(/([A-Z])/g, ' $1').trim()}`).join(', ')})`}
-                        />
-                    )}
+                    
+                    {/* Mostrar todos los items del carrito */}
+                    {cartItems.map((item, index) => (
+                        <div key={item.id} className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-b-0">
+                            <h6 className="font-semibold text-slate-900 dark:text-white mb-2">
+                                Entrada {index + 1}
+                            </h6>
+                            <SummaryRow label="Fecha" value={item.dateString} />
+                            <SummaryRow label="Horario" value={item.time} />
+                            <SummaryRow label="Visitantes" value={`${item.quantity} personas`} />
+                            <SummaryRow label="Subtotal" value={`$${item.subtotal.toLocaleString('es-MX')} MXN`} />
+                        </div>
+                    ))}
 
                     <SummaryRow label="Titular" value={`${contactInfo.nombres} ${contactInfo.apellidos}`} />
                     <SummaryRow label="Correo de contacto" value={contactInfo.correo} />
@@ -1258,7 +1468,10 @@ const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contact
                     <div className="border-2 border-primary-500 dark:border-primary-400 rounded-lg p-6 bg-primary-50 dark:bg-primary-900/20">
                         <div className="text-center">
                             <h5 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Total a Pagar</h5>
-                            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">${totalAmount.toLocaleString('es-MX')} MXN</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                                {getCartTotalVisitors()} visitantes en {cartItems.length} fechas
+                            </p>
+                            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">${getCartTotal().toLocaleString('es-MX')} MXN</p>
                         </div>
                     </div>
                 </div>
