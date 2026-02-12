@@ -20,9 +20,11 @@ const GuiasAlta = () => {
   const [correo, setCorreo] = useState();
   const [password, setPassword] = useState();
   const [foto, setFoto] = useState();
-  const [identificacion, setIdentificacion] = useState();
   const [empresa_id, setEmpresa] = useState();
   const [tipoColaborador, setTipoColaborador] = useState();
+  const [cargo, setCargo] = useState();
+  const [area, setArea] = useState();
+  const [nss, setNss] = useState();
 
   const [allempresas, setAllEmpresas] = useState([]);
   const allUserTypes = [
@@ -60,10 +62,12 @@ const GuiasAlta = () => {
       mostrarMensaje("Debes escribir al menos un apellido");
     } else if (correo == "" || correo == undefined) {
       mostrarMensaje("Debes escribir un correo");
-    } else if (foto == "" || foto == undefined) {
-      mostrarMensaje("Debes seleccionar una foto");
-    } else if (identificacion == "" || identificacion == undefined) {
-      mostrarMensaje("Debes seleccionar una foto de tu identificación");
+    } else if (cargo == "" || cargo == undefined) {
+      mostrarMensaje("Debes escribir el cargo");
+    } else if (area == "" || area == undefined) {
+      mostrarMensaje("Debes escribir el área");
+    } else if (nss == "" || nss == undefined) {
+      mostrarMensaje("Debes escribir el NSS");
     } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
     } else if (tipoColaborador.value == "" || tipoColaborador.value == undefined) {
@@ -96,9 +100,11 @@ const GuiasAlta = () => {
           correo,
           password,
           foto,
-          identificacion,
           empresa_id: empresa_id.value,
-          tipoColaborador: tipoColaborador.value
+          tipoColaborador: tipoColaborador.value,
+          cargo,
+          area,
+          nss
         });
       } else {
         createGuia({
@@ -107,9 +113,11 @@ const GuiasAlta = () => {
           correo,
           password,
           foto,
-          identificacion,
           empresa_id,
-          tipoColaborador: tipoColaborador.value
+          tipoColaborador: tipoColaborador.value,
+          cargo,
+          area,
+          nss
         });
       }
     }
@@ -196,21 +204,39 @@ const GuiasAlta = () => {
                   type="email"
                 />
 
+                {/*Cargo*/}
+                <Textinput
+                  onChange={(e) => setCargo(e.target.value)}
+                  label="Cargo *"
+                  placeholder="Cargo"
+                  id="cargo"
+                  type="text"
+                />
+
+                {/*Área*/}
+                <Textinput
+                  onChange={(e) => setArea(e.target.value)}
+                  label="Área *"
+                  placeholder="Área"
+                  id="area"
+                  type="text"
+                />
+
+                {/*NSS*/}
+                <Textinput
+                  onChange={(e) => setNss(e.target.value)}
+                  label="NSS *"
+                  placeholder="NSS"
+                  id="nss"
+                  type="text"
+                />
+
                 {/*Foto*/}
                 <Textinput
                   onChange={(e) => setFoto(e.target.files[0])}
                   label="Foto *"
                   placeholder="Foto"
                   id="foto"
-                  type="file"
-                />
-
-                {/*Identificacion*/}
-                <Textinput
-                  onChange={(e) => setIdentificacion(e.target.files[0])}
-                  label="Identificación *"
-                  placeholder="Identificación"
-                  id="identificacion"
                   type="file"
                 />
 

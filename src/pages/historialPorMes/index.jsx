@@ -14,12 +14,12 @@ import GlobalFilter from "../table/react-tables/GlobalFilter";
 
 import { useNavigate } from "react-router-dom";
 import clienteAxios from '../../configs/axios';
-import { UserContext } from "../../pages/context/userContext";
+import { UserContext } from "../context/userContext";
 
 import { downloadExcel } from "react-export-table-to-excel";
 
 
-const Historial = () => {
+const HistorialByMonth = () => {
   const COLUMNS = [
     {
       Header: "Tour",
@@ -190,6 +190,11 @@ const Historial = () => {
   const [jumpTarget, setJumpTarget] = useState(null);
   const [jumpValue, setJumpValue] = useState("");
 
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+
 
   const userCtx = useContext(UserContext);
   const { user, authStatus, verifyingToken } = userCtx;
@@ -203,7 +208,7 @@ const Historial = () => {
 
     if (parseInt(tipoUsuario) == 1) {
       try {
-        const res = await clienteAxios.get(`/admin/viaje-tour/viaje-Tours`);
+        const res = await clienteAxios.get(`/admin/viaje-tour/viaje-ToursByMonth?month=${month}&year=${year}`);
         console.log(res.data);
         setDatos(res.data);
         setDatosOriginales(res.data); // 👈 guardamos copia original
@@ -212,7 +217,7 @@ const Historial = () => {
       }
     } else {
       try {
-        const res = await clienteAxios.get(`/admin/viaje-tour/historialByEmpresa/${idempresa}/admin/${idusuario}`);
+        const res = await clienteAxios.get(`/admin/viaje-tour/historialByEmpresaByMonth/${idempresa}/admin/${idusuario}?month=${month}&year=${year}`);
         console.log(res.data);
         setDatos(res.data);
         setDatosOriginales(res.data); // 👈 guardamos copia original
@@ -234,7 +239,7 @@ const Historial = () => {
       getHistory(2, user[0].empresa_id, user[0].id);
     }
     //console.log(datos);
-  }, [authStatus])
+  }, [authStatus, month, year])
 
 
   const header = [
@@ -353,6 +358,10 @@ const Historial = () => {
     }
   }, [datosOriginales]);
 
+  useEffect(() => {
+  gotoPage(0);
+}, [month, year]);
+
   const handleAlta = () => {
     //navigate("/guias/alta");
   }
@@ -437,6 +446,35 @@ const Historial = () => {
           */}
           <button className="btn btn-success m-2" onClick={handleDownloadExcel}>Exportar</button>
           <div className="flex items-right">
+            
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="form-control py-2"
+              style={{ maxWidth: "150px", marginRight: "10px" }}
+            >
+              <option value={1}>Enero</option>
+              <option value={2}>Febrero</option>
+              <option value={3}>Marzo</option>
+              <option value={4}>Abril</option>
+              <option value={5}>Mayo</option>
+              <option value={6}>Junio</option>
+              <option value={7}>Julio</option>
+              <option value={8}>Agosto</option>
+              <option value={9}>Septiembre</option>
+              <option value={10}>Octubre</option>
+              <option value={11}>Noviembre</option>
+              <option value={12}>Diciembre</option>
+            </select>
+
+            <input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="form-control py-2"
+              style={{ width: "110px", marginRight: "10px" }}
+            />
+
             <select style={{ maxWidth: "150px", marginRight: "10px" }}
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
@@ -448,6 +486,7 @@ const Historial = () => {
                 </option>
               ))}
             </select>
+            
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
@@ -726,4 +765,4 @@ const Historial = () => {
   );
 };
 
-export default Historial;
+export default HistorialByMonth;

@@ -425,6 +425,19 @@ const VentasPage = () => {
             return;
         }
 
+        // Verificar si al agregar este item se excede el límite de 100 boletos por fecha
+        const dateKey = selectedDate.toISOString().split('T')[0];
+        const currentTicketsForDate = cartItems
+            .filter(item => item.date.toISOString().split('T')[0] === dateKey)
+            .reduce((total, item) => total + item.quantity, 0);
+        
+        const newTotalForDate = currentTicketsForDate + totalVisitantes;
+        
+        if (newTotalForDate > 100) {
+            toast.warn(`No puedes agregar más de 100 boletos para el mismo día. Actualmente tienes ${currentTicketsForDate} boletos para esta fecha y estás intentando agregar ${totalVisitantes} más.`);
+            return;
+        }
+
         const cartItem = {
             id: Date.now(), // ID único para el item
             date: selectedDate,
@@ -523,6 +536,41 @@ const VentasPage = () => {
                     confirmButtonColor: '#a01e24'
                 });
                 return;
+            }
+
+            // Validar que se compren mínimo 10 boletos en total y máximo 100 boletos por fecha
+            const totalTickets = getCartTotalVisitors();
+            
+            if (totalTickets < 10) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cantidad mínima requerida',
+                    text: `Necesitas comprar al menos 10 boletos en total. Actualmente tienes ${totalTickets} boletos.`,
+                    confirmButtonColor: '#a01e24'
+                });
+                return;
+            }
+
+            // Validar máximo 100 boletos por fecha
+            const ticketsByDate = {};
+            cartItems.forEach(item => {
+                const dateKey = item.date.toISOString().split('T')[0];
+                if (!ticketsByDate[dateKey]) {
+                    ticketsByDate[dateKey] = 0;
+                }
+                ticketsByDate[dateKey] += item.quantity;
+            });
+
+            for (const [date, ticketsForDate] of Object.entries(ticketsByDate)) {
+                if (ticketsForDate > 100) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cantidad máxima excedida',
+                        text: `Para el día ${new Date(date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} el máximo permitido es de 100 boletos. Actualmente tienes ${ticketsForDate} boletos.`,
+                        confirmButtonColor: '#a01e24'
+                    });
+                    return;
+                }
             }
 
             // Validar datos requeridos
@@ -643,6 +691,31 @@ const VentasPage = () => {
             if (cartItems.length === 0) {
                 toast.error('El carrito está vacío');
                 return;
+            }
+
+            // Validar que se compren mínimo 10 boletos en total y máximo 100 boletos por fecha
+            const totalTickets = getCartTotalVisitors();
+            
+            if (totalTickets < 10) {
+                toast.error(`Necesitas comprar al menos 10 boletos en total. Actualmente tienes ${totalTickets} boletos.`);
+                return;
+            }
+
+            // Validar máximo 100 boletos por fecha
+            const ticketsByDate = {};
+            cartItems.forEach(item => {
+                const dateKey = item.date.toISOString().split('T')[0];
+                if (!ticketsByDate[dateKey]) {
+                    ticketsByDate[dateKey] = 0;
+                }
+                ticketsByDate[dateKey] += item.quantity;
+            });
+
+            for (const [date, ticketsForDate] of Object.entries(ticketsByDate)) {
+                if (ticketsForDate > 100) {
+                    toast.error(`Para el día ${new Date(date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} el máximo permitido es de 100 boletos. Actualmente tienes ${ticketsForDate} boletos.`);
+                    return;
+                }
             }
 
             const nombre = contactInfo.nombres.trim();
@@ -1245,6 +1318,21 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
 
 // Step 3: Cart View
 const StepCart = ({ cartItems, removeFromCart, getCartTotal, getCartTotalVisitors }) => {
+    // Calculate tickets by date for validation display
+    const ticketsByDate = {};
+    cartItems.forEach(item => {
+        const dateKey = item.date.toISOString().split('T')[0];
+        if (!ticketsByDate[dateKey]) {
+            ticketsByDate[dateKey] = {
+                dateString: item.dateString,
+                total: 0,
+                items: []
+            };
+        }
+        ticketsByDate[dateKey].total += item.quantity;
+        ticketsByDate[dateKey].items.push(item);
+    });
+
     if (cartItems.length === 0) {
         return (
             <div className="space-y-6">
@@ -1256,6 +1344,7 @@ const StepCart = ({ cartItems, removeFromCart, getCartTotal, getCartTotalVisitor
                     <div className="card-body text-center py-8">
                         <p className="text-slate-600 dark:text-slate-300">No has agregado ningún boleto al carrito</p>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Regresa a la sección anterior para agregar boletos</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Recuerda: Mínimo 10 boletos en total, máximo 100 boletos por fecha</p>
                     </div>
                 </div>
             </div>
@@ -1267,6 +1356,54 @@ const StepCart = ({ cartItems, removeFromCart, getCartTotal, getCartTotalVisitor
             <div className="text-center">
                 <h4 className="card-title text-slate-900 dark:text-white">Tu Carrito</h4>
                 <p className="text-slate-600 dark:text-slate-300 mt-2">Revisa tus selecciones antes de continuar</p>
+            </div>
+
+            {/* Validación por fecha */}
+            <div className="space-y-3">
+                {/* Validación total general */}
+                {getCartTotalVisitors() < 10 && (
+                    <div className="p-4 rounded-lg border bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-600">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">Total General</p>
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    Total de boletos: <span className="font-bold">{getCartTotalVisitors()}</span>
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                                    ❌ Mínimo 10 boletos en total
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Validación por cada fecha - solo mostrar si hay advertencias */}
+                {Object.entries(ticketsByDate).map(([dateKey, dateInfo]) => {
+                    const isAboveMax = dateInfo.total > 100;
+                    
+                    // Solo mostrar el recuadro si hay una advertencia
+                    if (!isAboveMax) return null;
+                    
+                    return (
+                        <div key={dateKey} className="p-4 rounded-lg border bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-600">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold text-slate-900 dark:text-white">{dateInfo.dateString}</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                                        Boletos para esta fecha: <span className="font-bold">{dateInfo.total}</span>
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                                        ❌ Máximo 100 boletos
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="space-y-4">
@@ -1316,6 +1453,11 @@ const StepCart = ({ cartItems, removeFromCart, getCartTotal, getCartTotalVisitor
                         <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                             ${getCartTotal().toLocaleString('es-MX')} MXN
                         </p>
+                        <div className="mt-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                            <p className="text-xs text-slate-600 dark:text-slate-300">
+                                ⚠️ Recuerda: Mínimo 10 boletos en total, máximo 100 boletos por fecha
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

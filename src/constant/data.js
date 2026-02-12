@@ -83,6 +83,11 @@ export const menuItems = [
     link: "historial",
   },
   {
+    title: "Historial Mensual",
+    icon: "heroicons:table-cells",
+    link: "historialPorMes",
+  },
+  {
     title: "Historial Operadores",
     icon: "heroicons:table-cells",
     link: "historialOperadores",
@@ -177,6 +182,11 @@ export const menuItemsAdministrador = [
     link: "historial",
   },
   {
+    title: "Historial Mensual",
+    icon: "heroicons:table-cells",
+    link: "historialPorMes",
+  },
+  {
     title: "Historial Operadores",
     icon: "heroicons:table-cells",
     link: "historialOperadores",
@@ -237,6 +247,11 @@ export const menuItemsGuia = [
     link: "historial",
   },
   {
+    title: "Historial Mensual",
+    icon: "heroicons:table-cells",
+    link: "historialPorMes",
+  },
+  {
     title: "Ventas Canceladas",
     icon: "heroicons:table-cells",
     link: "canceladas",
@@ -270,6 +285,11 @@ export const menuItemsInvestor = [
     link: "historial",
   },
   {
+    title: "Historial Mensual",
+    icon: "heroicons:table-cells",
+    link: "historialPorMes",
+  },
+  {
     title: "Historial Operadores",
     icon: "heroicons:table-cells",
     link: "historialOperadores",
@@ -286,6 +306,11 @@ export const menuItemsPartner = [
     title: "Historial",
     icon: "heroicons:table-cells",
     link: "historial",
+  },
+  {
+    title: "Historial Mensual",
+    icon: "heroicons:table-cells",
+    link: "historialPorMes",
   },
   {
     title: "Punto de Venta",

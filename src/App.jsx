@@ -62,6 +62,7 @@ const ComentariosBorrar = lazy(() => import("./pages/comentarios/borrar"));
 
 const Historial = lazy(() => import("./pages/historial"));
 const HistorialOperadores = lazy(() => import("./pages/historialOperadores"));
+const HistorialPorMes = lazy(() => import("./pages/historialPorMes"));
 
 const FotografiasAlta = lazy(() => import("./pages/fotografias/alta"));
 
@@ -171,6 +172,7 @@ function App() {
 
           <Route path="historial" element={<Historial />} />
           <Route path="historialOperadores" element={<HistorialOperadores />} />
+          <Route path="historialPorMes" element={<HistorialPorMes />} />
 
           <Route path="fotografias/alta" element={<FotografiasAlta />} />
 

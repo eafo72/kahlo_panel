@@ -25,6 +25,7 @@ const routePermissions = {
   '/guias':                       [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/historial':                   [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR, ROLES.GUIDE, ROLES.PARTNER],
   '/historialOperadores':         [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR ],
+  '/historialPorMes':             [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR ],
   '/reservaciones/cancelar':      [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/reservaciones/imprimir':      [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
   '/reservaciones/modificar':     [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE],
