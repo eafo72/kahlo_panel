@@ -19,6 +19,7 @@ const VentasPage = () => {
         entradaTipoA: 0, // General
         entradaTipoB: 0, // Mexicano
         entradaTipoC: 0, // Especial
+        entradaTipoD: 0, // Noche de Museos
     });
     const [availableTimes, setAvailableTimes] = useState([]);
     const [selectedTime, setSelectedTime] = useState('');
@@ -309,14 +310,96 @@ const VentasPage = () => {
         fetchTourData();
     }, []);
 
+    // Efecto para limpiar boletos tipo D y horarios cuando cambia la fecha
+    useEffect(() => {
+        if (selectedDate) {
+            let mensajeMostrado = false;
+            
+            // Limpiar boletos tipo D si la fecha no es el último miércoles
+            if (!esUltimoMiercolesDelMes(selectedDate) && (ticketQuantities.entradaTipoD || 0) > 0) {
+                setTicketQuantities(prev => ({
+                    ...prev,
+                    entradaTipoD: 0
+                }));
+                toast.warn('Se han eliminado los boletos de Noche de Museos. Esta fecha no corresponde al último miércoles del mes.');
+                mensajeMostrado = true;
+            }
+            
+            // Limpiar horarios disponibles y horario seleccionado
+            if (availableTimes.length > 0 || selectedTime) {
+                setAvailableTimes([]);
+                setSelectedTime('');
+                if (!mensajeMostrado) {
+                    toast.warn('La fecha ha cambiado. Debes consultar los horarios disponibles nuevamente.');
+                } else {
+                    // Si ya se mostró el mensaje anterior, mostrar uno adicional
+                    setTimeout(() => {
+                        toast.warn('Debes consultar los horarios disponibles nuevamente.');
+                    }, 1000);
+                }
+            }
+        }
+    }, [selectedDate, ticketQuantities.entradaTipoD]);
+
     const handleQtyChange = (type, amount) => {
-        setTicketQuantities(prev => ({
-            ...prev,
-            [type]: Math.max(0, prev[type] + amount)
-        }));
+        setTicketQuantities(prev => {
+            const newValue = Math.max(0, prev[type] + amount);
+            
+            // Si se está modificando entradaTipoD y va a ser > 0, poner otros tipos en 0
+            if (type === 'entradaTipoD' && newValue > 0) {
+                return {
+                    entradaTipoA: 0,
+                    entradaTipoB: 0,
+                    entradaTipoC: 0,
+                    entradaTipoD: newValue
+                };
+            }
+            
+            // Si se está modificando cualquier otro tipo y va a ser > 0, poner entradaTipoD en 0
+            if (type !== 'entradaTipoD' && newValue > 0) {
+                return {
+                    ...prev,
+                    [type]: newValue,
+                    entradaTipoD: 0
+                };
+            }
+            
+            // Si es decremento o valor 0, solo actualizar el tipo específico
+            return {
+                ...prev,
+                [type]: newValue
+            };
+        });
     };
 
     const totalVisitantes = Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0);
+
+    // Función para verificar si la fecha es el último miércoles del mes
+    const esUltimoMiercolesDelMes = (date) => {
+        if (!date) return false;
+        
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        
+        // Obtener el último día del mes
+        const ultimoDiaMes = new Date(year, month + 1, 0);
+        
+        // Encontrar el último miércoles del mes
+        let ultimoMiercoles = null;
+        for (let dia = ultimoDiaMes.getDate(); dia >= 1; dia--) {
+            const fechaActual = new Date(year, month, dia);
+            if (fechaActual.getDay() === 3) { // 3 = miércoles
+                ultimoMiercoles = fechaActual;
+                break;
+            }
+        }
+        
+        // Comparar si la fecha seleccionada es el último miércoles
+        return ultimoMiercoles && 
+               date.getDate() === ultimoMiercoles.getDate() &&
+               date.getMonth() === ultimoMiercoles.getMonth() &&
+               date.getFullYear() === ultimoMiercoles.getFullYear();
+    };
 
     const handleCheckHorarios = async () => {
         if (totalVisitantes === 0 || totalVisitantes > 30) {
@@ -329,10 +412,21 @@ const VentasPage = () => {
             return;
         }
 
-
         const formattedDate = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Preparar tipos de boletos seleccionados
+        const tiposBoletos = {
+            tipoA: ticketQuantities.entradaTipoA,
+            tipoB: ticketQuantities.entradaTipoB,
+            tipoC: ticketQuantities.entradaTipoC,
+            tipoD: ticketQuantities.entradaTipoD
+        };
 
-        const promise = clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${totalVisitantes}`);
+        const promise = clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${totalVisitantes}`, {
+            params: {
+                tipos_boletos: JSON.stringify(tiposBoletos)
+            }
+        });
 
         toast.promise(promise, {
             pending: 'Verificando horarios...',
@@ -397,10 +491,11 @@ const VentasPage = () => {
             const tipoA = ticketQuantities.entradaTipoA;
             const tipoB = ticketQuantities.entradaTipoB;
             const tipoC = ticketQuantities.entradaTipoC;
+            const tipoD = ticketQuantities.entradaTipoD;
 
-            const tipos_boletos = JSON.stringify({ tipoA, tipoB, tipoC });
+            const tipos_boletos = JSON.stringify({ tipoA, tipoB, tipoC, tipoD });
             const visitantes = totalVisitantes;
-            const totalCalculado = (270 * tipoA) + (130 * tipoB) + (65 * tipoC);
+            const totalCalculado = (270 * tipoA) + (130 * tipoB) + (65 * tipoC) + (250 * tipoD);
 
             const nombre = contactInfo.nombres.trim();
             const apellidos = contactInfo.apellidos.trim();
@@ -495,7 +590,7 @@ const VentasPage = () => {
             case 1:
                 return <Step1 selectedDate={selectedDate} setSelectedDate={setSelectedDate} tourData={tourData} />;
             case 2:
-                return <Step2 ticketQuantities={ticketQuantities} handleQtyChange={handleQtyChange} availableTimes={availableTimes} selectedTime={selectedTime} setSelectedTime={setSelectedTime} handleCheckHorarios={handleCheckHorarios} />;
+                return <Step2 ticketQuantities={ticketQuantities} handleQtyChange={handleQtyChange} availableTimes={availableTimes} selectedTime={selectedTime} setSelectedTime={setSelectedTime} handleCheckHorarios={handleCheckHorarios} selectedDate={selectedDate} esUltimoMiercolesDelMes={esUltimoMiercolesDelMes} />;
             case 3:
                 return <Step3 contactInfo={contactInfo} setContactInfo={setContactInfo} isLogin={isLogin} setIsLogin={setIsLogin} />;
             case 4:
@@ -666,7 +761,9 @@ const VentasPage = () => {
                                                     entradaTipoA: 0,
                                                     entradaTipoB: 0,
                                                     entradaTipoC: 0,
+                                                    entradaTipoD: 0,
                                                 });
+                                                setAvailableTimes([]);
                                                 setSelectedTime('');
                                                 setContactInfo({
                                                     nombres: '',
@@ -885,7 +982,7 @@ const Step1 = ({ selectedDate, setSelectedDate, tourData }) => {
 };
 
 // Step 2: Quantity and Time
-const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime, setSelectedTime, handleCheckHorarios }) => (
+const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime, setSelectedTime, handleCheckHorarios, selectedDate, esUltimoMiercolesDelMes }) => (
     <div className="space-y-6">
         <div className="text-center">
             <h4 className="card-title text-slate-900 dark:text-white">Selecciona cantidad y horario</h4>
@@ -893,10 +990,13 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
         </div>
 
         {/* Ticket Types */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <TicketInput type="entradaTipoA" label="Entrada General" price="270.00" value={ticketQuantities.entradaTipoA} onChange={handleQtyChange} />
             <TicketInput type="entradaTipoB" label="Ciudadano Mexicano" price="130.00" value={ticketQuantities.entradaTipoB} onChange={handleQtyChange} />
             <TicketInput type="entradaTipoC" label="Estudiante / Adulto Mayor / Niño (-12)" price="65.00" value={ticketQuantities.entradaTipoC} onChange={handleQtyChange} />
+            {esUltimoMiercolesDelMes(selectedDate) && (
+                <TicketInput type="entradaTipoD" label="Noche de Museos" price="250.00" value={ticketQuantities.entradaTipoD} onChange={handleQtyChange} />
+            )}
         </div>
 
         {/* Time Selection */}
@@ -1060,7 +1160,7 @@ const Step3 = ({ contactInfo, setContactInfo, isLogin, setIsLogin }) => {
 
 // Step 4: Summary
 const Step4 = ({ tourData, selectedDate, selectedTime, ticketQuantities, contactInfo, totalVisitantes }) => {
-    const totalAmount = (ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65);
+    const totalAmount = (ticketQuantities.entradaTipoA * 270) + (ticketQuantities.entradaTipoB * 130) + (ticketQuantities.entradaTipoC * 65) + (ticketQuantities.entradaTipoD * 250);
 
     return (
         <div className="space-y-6">

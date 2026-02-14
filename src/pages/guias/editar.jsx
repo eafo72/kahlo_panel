@@ -20,11 +20,11 @@ const GuiasEditar = () => {
   const [correo, setCorreo] = useState();
   const [password, setPassword] = useState();
   const [foto, setFoto] = useState();
-  const [identificacion, setIdentificacion] = useState();
+  const [cargo, setCargo] = useState();
+  const [area, setArea] = useState();
+  const [nss, setNss] = useState();
 
   const [fotoOld, setFotoOld] = useState();
-  const [identificacionOld, setIdentificacionOld] = useState();
-
   const [empresa_id, setEmpresa] = useState();
 
   const [allempresas, setAllEmpresas] = useState([]);
@@ -57,7 +57,9 @@ const GuiasEditar = () => {
       setApellidos(res.data[0].apellidos);
       setCorreo(res.data[0].correo);
       setFotoOld(res.data[0].foto);
-      setIdentificacionOld(res.data[0].identificacion);
+      setCargo(res.data[0].cargo);
+      setArea(res.data[0].area);
+      setNss(res.data[0].nss);
 
       setEmpresa({
         label: res.data[0].empresa,
@@ -109,6 +111,12 @@ const GuiasEditar = () => {
       mostrarMensaje("Debes escribir al menos un apellido");
     } else if (correo == "" || correo == undefined) {
       mostrarMensaje("Debes escribir un correo");
+    } else if (cargo == "" || cargo == undefined) {
+      mostrarMensaje("Debes escribir el cargo");
+    } else if (area == "" || area == undefined) {
+      mostrarMensaje("Debes escribir el área");
+    } else if (nss == "" || nss == undefined) {
+      mostrarMensaje("Debes escribir el NSS");
     } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
     } else {
@@ -124,8 +132,10 @@ const GuiasEditar = () => {
               correo,
               password,
               foto,
-              identificacion,
               empresa_id: empresa_id.value,
+              cargo,
+              area,
+              nss
             },
             headers: { "Content-Type": "multipart/form-data" },
           });
@@ -188,6 +198,46 @@ const GuiasEditar = () => {
                   defaultValue={apellidos}
                 />
 
+                {/*Correo*/}
+                <Textinput
+                  onChange={(e) => setCorreo(e.target.value)}
+                  label="Correo *"
+                  placeholder="Correo"
+                  id="correo"
+                  type="email"
+                  defaultValue={correo}
+                />
+
+                {/*Cargo*/}
+                <Textinput
+                  onChange={(e) => setCargo(e.target.value)}
+                  label="Cargo *"
+                  placeholder="Cargo"
+                  id="cargo"
+                  type="text"
+                  defaultValue={cargo}
+                />
+
+                {/*Área*/}
+                <Textinput
+                  onChange={(e) => setArea(e.target.value)}
+                  label="Área *"
+                  placeholder="Área"
+                  id="area"
+                  type="text"
+                  defaultValue={area}
+                />
+
+                {/*NSS*/}
+                <Textinput
+                  onChange={(e) => setNss(e.target.value)}
+                  label="NSS *"
+                  placeholder="NSS"
+                  id="nss"
+                  type="text"
+                  defaultValue={nss}
+                />
+
                 {/*Foto*/}
                 <Textinput
                   onChange={(e) => setFoto(e.target.files[0])}
@@ -195,16 +245,6 @@ const GuiasEditar = () => {
                   placeholder="Foto"
                   id="foto"
                   type="file"
-                />
-
-                {/*Identificacion*/}
-                <Textinput
-                  onChange={(e) => setIdentificacion(e.target.files[0])}
-                  label="Identificación"
-                  placeholder="Identificación"
-                  id="identificacion"
-                  type="file"
-                  defaultValue={identificacion}
                 />
 
                 {/*Empresa id*/}
@@ -248,9 +288,6 @@ const GuiasEditar = () => {
           <Card title="Documentos Actuales">
             <p >Foto:</p>
             <img src={fotoOld} className="w-full h-full" />
-
-            <p className="mt-10">Identificación:</p>
-            <img src={identificacionOld} className="w-full h-full" />
           </Card>
         </div>
       )}

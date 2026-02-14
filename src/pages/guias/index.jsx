@@ -51,6 +51,27 @@ const Guias = () => {
       },
     },
     {
+      Header: "Cargo",
+      accessor: "cargo",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "Area",
+      accessor: "area",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
+      Header: "NSS",
+      accessor: "nss",
+      Cell: (row) => {
+        return <span>{row?.cell?.value}</span>;
+      },
+    },
+    {
       Header: "Status",
       accessor: "status",
       Cell: (row) => {
@@ -74,13 +95,6 @@ const Guias = () => {
             </span>
           </span>
         );
-      },
-    },
-    {
-      Header: "Empresa",
-      accessor: "empresa",
-      Cell: (row) => {
-        return <span>{row?.cell?.value}</span>;
       },
     },
     {
