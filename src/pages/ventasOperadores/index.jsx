@@ -61,7 +61,7 @@ const VentasPage = () => {
     const tourId = 24;
 
     // Stripe configuration for operators
-    const STRIPE_PRODUCT = 'price_1StufU3CVvaJXMYXLXkf75Yk'; // Replace with your actual Stripe price ID for operators
+    //const STRIPE_PRODUCT = 'price_1StufU3CVvaJXMYXLXkf75Yk'; // Replace with your actual Stripe price ID for operators
     const TICKET_PRICE = 215; // Precio fijo para operadores
 
 
@@ -318,6 +318,29 @@ const VentasPage = () => {
     if (!initialized.current) {
         initialized.current = true;
 
+        // Verificar si hay que restaurar el estado del carrito
+        const returnToCart = localStorage.getItem('returnToCart');
+        const savedCartState = localStorage.getItem('cartState');
+        
+        if (returnToCart === 'true' && savedCartState) {
+            try {
+                const cartState = JSON.parse(savedCartState);
+                setCartItems(cartState.cartItems || []);
+                setCurrentStep(cartState.currentStep || 1);
+                setSelectedDate(cartState.selectedDate ? new Date(cartState.selectedDate) : null);
+                setSelectedTime(cartState.selectedTime || '');
+                setTicketQuantities(cartState.ticketQuantities || { entradaTipoA: 1 });
+                setAvailableTimes(cartState.availableTimes || []);
+                setContactInfo(prev => ({ ...prev, ...cartState.contactInfo }));
+                
+                // Limpiar el estado de retorno
+                localStorage.removeItem('returnToCart');
+                localStorage.removeItem('cartState');
+            } catch (error) {
+                console.error('Error al restaurar el estado del carrito:', error);
+            }
+        }
+
         const token = localStorage.getItem("token");
                 
         if (!token) {
@@ -337,6 +360,7 @@ const VentasPage = () => {
                             telefono: result[0].telefono || '',
                             correo: result[0].correo || '',
                             password: '',
+                            saldo: result[0].saldo || 0,
                         });
                     } else {
                         console.log('result is null or undefined');
@@ -357,12 +381,40 @@ const VentasPage = () => {
         const checkStripeSession = async () => {
             const params = new URLSearchParams(window.location.search);
             const sessionId = params.get('session_id');
+            const balanceLoaded = params.get('balance_loaded');
+            const loadedAmount = params.get('amount');
 
+            // Limpiar la URL
+            window.history.replaceState({}, document.title, '/ventasOperadores');
+
+            // Verificar si se cargó saldo
+            if (balanceLoaded === 'true' && loadedAmount) {
+                try {
+                    // Mostrar mensaje de éxito
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Saldo cargado exitosamente!',
+                        text: `Se han cargado $${parseFloat(loadedAmount).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN a tu cuenta.`,
+                        confirmButtonColor: '#10b981',
+                        confirmButtonText: 'Continuar'
+                    });
+
+                    // Actualizar el saldo del usuario
+                    const result = await verifyingToken();
+                    if (result) {
+                        setContactInfo(prev => ({
+                            ...prev,
+                            saldo: result[0].saldo || 0
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error al verificar carga de saldo:', error);
+                }
+            }
+
+            // Verificar si hay una sesión de pago normal
             if (sessionId) {
                 try {
-                    // Limpiar la URL
-                    window.history.replaceState({}, document.title, '/ventasOperadores');
-
                     // Verificar el estado del pago
                     const response = await clienteAxios.get(`/venta/verificar-sesion-stripe?session_id=${sessionId}`);
 
@@ -414,6 +466,13 @@ const VentasPage = () => {
             ...prev,
             [type]: Math.max(1, Math.min(30, prev[type] + amount)) // Keep between 1 and 30
         }));
+        
+        // Si hay un horario seleccionado, resetearlo al cambiar la cantidad de boletos
+        if (selectedTime && selectedTime !== '') {
+            setSelectedTime('');
+            setAvailableTimes([]);
+            toast.info('La cantidad de boletos ha cambiado. Por favor, consulta los horarios disponibles nuevamente.');
+        }
     };
 
     const totalVisitantes = ticketQuantities.entradaTipoA;
@@ -523,17 +582,238 @@ const VentasPage = () => {
 
 
 
-    const handleStripePayment = async () => {
+    // Función para resetear el formulario para nueva compra
+    const resetFormForNewPurchase = () => {
+        // Resetear estados principales
+        setCurrentStep(1);
+        setSelectedDate(null);
+        setSelectedTime('');
+        setTicketQuantities({
+            entradaTipoA: 0,
+        });
+        setCartItems([]);
+        setShowQR(false);
+        setReservationId(null);
+        setClientExist(false);
+        setIsPaymentInProgress(false);
+        
+        // Limpiar localStorage
+        localStorage.removeItem('cartItems');
+        localStorage.removeItem('selectedDate');
+        localStorage.removeItem('selectedTime');
+        localStorage.removeItem('ticketQuantities');
+    };
+
+    // Función helper para aplicar estilos a SweetAlert2
+    const applySweetAlertStyles = () => {
+        // Agregar estilos CSS para forzar la visibilidad de los botones
+        const style = document.createElement('style');
+        style.textContent = `
+            .swal2-popup .swal2-actions {
+                display: flex !important;
+                justify-content: center !important;
+                margin-top: 1em !important;
+            }
+            .swal2-popup .swal2-confirm:not([style*="display: none"]):not(.swal2-hidden) {
+                background-color: #10b981 !important;
+                color: white !important;
+                border: none !important;
+                padding: 0.6em 1.5em !important;
+                font-size: 1em !important;
+                font-weight: 500 !important;
+                border-radius: 0.25em !important;
+                margin: 0 0.5em !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+            }
+            .swal2-popup .swal2-cancel:not([style*="display: none"]):not(.swal2-hidden) {
+                background-color: #6b7280 !important;
+                color: white !important;
+                border: none !important;
+                padding: 0.6em 1.5em !important;
+                font-size: 1em !important;
+                font-weight: 500 !important;
+                border-radius: 0.25em !important;
+                margin: 0 0.5em !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+            }
+            .swal2-popup .swal2-deny:not([style*="display: none"]):not(.swal2-hidden) {
+                background-color: #ef4444 !important;
+                color: white !important;
+                border: none !important;
+                padding: 0.6em 1.5em !important;
+                font-size: 1em !important;
+                font-weight: 500 !important;
+                border-radius: 0.25em !important;
+                margin: 0 0.5em !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: inline-block !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+            }
+            .swal2-popup .swal2-confirm:not([style*="display: none"]):not(.swal2-hidden):hover {
+                background-color: #059669 !important;
+                opacity: 0.9 !important;
+            }
+            .swal2-popup .swal2-cancel:not([style*="display: none"]):not(.swal2-hidden):hover {
+                background-color: #4b5563 !important;
+                opacity: 0.9 !important;
+            }
+            .swal2-popup .swal2-deny:not([style*="display: none"]):not(.swal2-hidden):hover {
+                background-color: #dc2626 !important;
+                opacity: 0.9 !important;
+            }
+            .swal2-popup .swal2-confirm[style*="display: none"],
+            .swal2-popup .swal2-cancel[style*="display: none"],
+            .swal2-popup .swal2-deny[style*="display: none"],
+            .swal2-popup .swal2-confirm.swal2-hidden,
+            .swal2-popup .swal2-cancel.swal2-hidden,
+            .swal2-popup .swal2-deny.swal2-hidden {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }
+        `;
+        document.head.appendChild(style);
+    };
+
+    // Función para manejar la carga de saldo
+    const handleLoadBalance = async () => {
         try {
-            setStripeLoading(true);
+            const { value: amount } = await Swal.fire({
+                title: 'Cargar Saldo',
+                text: 'Ingresa la cantidad que deseas cargar a tu cuenta',
+                input: 'number',
+                inputLabel: 'Cantidad (MXN)',
+                inputPlaceholder: '100.00',
+                inputAttributes: {
+                    min: 1,
+                    step: 0.01,
+                    max: 50000
+                },
+                inputValidator: (value) => {
+                    if (!value || value <= 0) {
+                        return 'Debes ingresar una cantidad válida';
+                    }
+                    if (value > 50000) {
+                        return 'La cantidad máxima es $50,000.00 MXN';
+                    }
+                    return null;
+                },
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Cargar Saldo',
+                cancelButtonText: 'Cancelar',
+                didOpen: () => {
+                    applySweetAlertStyles();
+                }
+            });
+
+            if (amount) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando carga de saldo',
+                    text: 'Estamos preparando tu pago...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => { Swal.showLoading(); }
+                });
+
+                // Crear sesión de checkout para carga de saldo
+                const response = await clienteAxios.post('/venta/stripe/create-balance-session', {
+                    amount: parseFloat(amount),
+                    customerEmail: contactInfo.correo,
+                    successUrl: `${window.location.origin}/ventasOperadores?balance_loaded=true&amount=${amount}`,
+                    cancelUrl: `${window.location.origin}/ventasOperadores`,
+                    metadata: {
+                        flow: 'wallet_topup',
+                        customer_id: contactInfo.id,
+                        customer_name: contactInfo.nombres + " " + contactInfo.apellidos,
+                        customer_email: contactInfo.correo,
+                        balance_load: 'true',
+                        amount: amount.toString()
+                    }
+                });
+
+                if (response.data.url) {
+                    // Redirigir a Stripe Checkout
+                    window.location.href = response.data.url;
+                } else {
+                    throw new Error('No se pudo iniciar el proceso de carga de saldo');
+                }
+            }
+        } catch (error) {
+            console.error('Error al procesar la carga de saldo:', error);
+            let errorMessage = 'Ocurrió un error al procesar tu carga de saldo. Por favor, intenta nuevamente.';
+            
+            if (error.response) {
+                errorMessage = error.response.data?.error || error.response.data?.message || error.response.statusText || errorMessage;
+            } else if (error.request) {
+                errorMessage = 'No se recibió respuesta del servidor. Por favor, verifica tu conexión a internet.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error al cargar saldo',
+                text: errorMessage,
+                confirmButtonColor: '#a01e24',
+                confirmButtonText: 'Entendido',
+                didOpen: applySweetAlertStyles
+            });
+        }
+    };
+
+    // Función para formatear fecha sin problemas de timezone
+    const formatearFecha = (fechaString) => {
+        const fecha = new Date(fechaString + 'T00:00:00');
+        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        const diaSemana = dias[fecha.getUTCDay()];
+        const dia = fecha.getUTCDate();
+        const mes = meses[fecha.getUTCMonth()];
+        const año = fecha.getUTCFullYear();
+        
+        return `${diaSemana}, ${dia} de ${mes} de ${año}`;
+    };
+
+    const handlePayment = async () => {
+        try {
+            // Deshabilitar botones
+            setIsPaymentInProgress(true);
 
             // Validar que el carrito no esté vacío
             if (cartItems.length === 0) {
-                Swal.fire({
+                await Swal.fire({
                     icon: 'warning',
                     title: 'Carrito vacío',
                     text: 'Debes agregar al menos un boleto al carrito',
-                    confirmButtonColor: '#a01e24'
+                    confirmButtonColor: '#a01e24',
+                    didOpen: applySweetAlertStyles
+                });
+                return;
+            }
+
+            // Validar saldo suficiente
+            const totalAmount = getCartTotal();
+            if (contactInfo.saldo < totalAmount) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Saldo insuficiente',
+                    text: `No tienes saldo suficiente para realizar esta compra. Saldo disponible: $${contactInfo.saldo.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN. Total requerido: $${totalAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`,
+                    confirmButtonColor: '#a01e24',
+                    didOpen: applySweetAlertStyles
                 });
                 return;
             }
@@ -542,11 +822,12 @@ const VentasPage = () => {
             const totalTickets = getCartTotalVisitors();
             
             if (totalTickets < 10) {
-                Swal.fire({
+                await Swal.fire({
                     icon: 'warning',
                     title: 'Cantidad mínima requerida',
                     text: `Necesitas comprar al menos 10 boletos en total. Actualmente tienes ${totalTickets} boletos.`,
-                    confirmButtonColor: '#a01e24'
+                    confirmButtonColor: '#a01e24',
+                    didOpen: applySweetAlertStyles
                 });
                 return;
             }
@@ -563,11 +844,12 @@ const VentasPage = () => {
 
             for (const [date, ticketsForDate] of Object.entries(ticketsByDate)) {
                 if (ticketsForDate > 100) {
-                    Swal.fire({
+                    await Swal.fire({
                         icon: 'warning',
                         title: 'Cantidad máxima excedida',
                         text: `Para el día ${new Date(date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} el máximo permitido es de 100 boletos. Actualmente tienes ${ticketsForDate} boletos.`,
-                        confirmButtonColor: '#a01e24'
+                        confirmButtonColor: '#a01e24',
+                        didOpen: applySweetAlertStyles
                     });
                     return;
                 }
@@ -575,11 +857,12 @@ const VentasPage = () => {
 
             // Validar datos requeridos
             if (!contactInfo.nombres || !contactInfo.correo) {
-                Swal.fire({
+                await Swal.fire({
                     icon: 'warning',
                     title: 'Datos incompletos',
                     text: 'Por favor completa todos los campos requeridos',
-                    confirmButtonColor: '#a01e24'
+                    confirmButtonColor: '#a01e24',
+                    didOpen: applySweetAlertStyles
                 });
                 return;
             }
@@ -589,13 +872,15 @@ const VentasPage = () => {
                 const formattedDate = item.date.toISOString().split('T')[0];
                 const disponibilidad = await clienteAxios.get(`/venta/horarios/${tourId}/fecha/${formattedDate}/boletos/${item.quantity}`);
                
-                const horarioSeleccionado = disponibilidad.data?.horarios?.find(h => h.hora_salida === item.time && h.disponible);
-                if (!horarioSeleccionado) {
-                    Swal.fire({
+                const horarioSeleccionado = disponibilidad.data?.horarios?.find(h => h.hora_salida === item.time);
+                if (!horarioSeleccionado || !horarioSeleccionado.disponible) {
+                    const lugaresDisponibles = horarioSeleccionado?.lugares_disp || 0;
+                    await Swal.fire({
                         icon: 'error',
                         title: 'No hay disponibilidad',
-                        text: `No hay suficientes boletos disponibles para ${item.dateString} a las ${item.time}`,
-                        confirmButtonColor: '#a01e24'
+                        text: `No hay suficientes boletos disponibles para ${item.dateString} a las ${item.time}. Lugares disponibles: ${lugaresDisponibles}`,
+                        confirmButtonColor: '#a01e24',
+                        didOpen: applySweetAlertStyles
                     });
                     return;
                 }
@@ -603,63 +888,115 @@ const VentasPage = () => {
 
             // Mostrar loading
             Swal.fire({
-                title: 'Preparando pago',
-                text: 'Estamos procesando tu solicitud...',
+                title: 'Procesando compra',
+                text: 'Estamos procesando tu compra con saldo...',
                 allowOutsideClick: false,
                 showConfirmButton: false,
                 willOpen: () => { Swal.showLoading(); }
             });
 
-            // Preparar items para Stripe
-            const totalAmount = getCartTotal();
+            // Preparar datos para la API
             const totalVisitors = getCartTotalVisitors();
             
-            // Crear línea de items para Stripe (todos los boletos al mismo precio)
-            const lineItems = [{
-                price: STRIPE_PRODUCT,
-                quantity: totalVisitors
-            }];
-
-            // Preparar metadata con todos los items del carrito
-            const cartItemsMetadata = cartItems.map(item => ({
-                date: item.date.toISOString().split('T')[0],
-                time: item.time,
-                quantity: item.quantity,
-                subtotal: item.subtotal
+            // Preparar los items del carrito para el backend
+            const cartItemsForBackend = cartItems.map(item => ({
+                fecha_ida: item.date.toISOString().split('T')[0],
+                horaCompleta: item.time,
+                boletos: item.quantity,
+                subtotal: item.subtotal,
+                tipos_boletos: JSON.stringify({ 
+                    tipoA: item.quantity, // Cada item usa su propia cantidad
+                    tipoB: 0, 
+                    tipoC: 0, 
+                    tipoD: 0 
+                })
             }));
 
-            // Crear sesión de checkout en el backend
-            const response = await clienteAxios.post('/venta/stripe/create-checkout-session-operator', {
-                lineItems,
-                customerEmail: contactInfo.correo,
-                successUrl: `${window.location.origin}/ventasOperadores/finalizada?session_id={CHECKOUT_SESSION_ID}`,
-                cancelUrl: `${window.location.origin}/ventasOperadores/cancel`,
-                metadata: {
-                    no_boletos: totalVisitors.toString(),
-                    nombre_cliente: contactInfo.nombres + " " + contactInfo.apellidos,
-                    cliente_id: contactInfo.id,
-                    correo: contactInfo.correo,
-                    tourId: tourId.toString(),
-                    cart_items: JSON.stringify(cartItemsMetadata),
-                    total: totalAmount.toString()
-                }
+            // Enviar información de compra a la API para procesar con saldo
+            const response = await clienteAxios.post('/venta/crear-touroperador', {
+                "no_boletos": parseInt(totalVisitors),
+                "cart_items": JSON.stringify(cartItemsForBackend),
+                "nombre_cliente": contactInfo.nombres + " " + contactInfo.apellidos,
+                "cliente_id": contactInfo.id,
+                "correo": contactInfo.correo,
+                "telefono": contactInfo.telefono,
+                "tourId": tourId,
+                "total": totalAmount,
+                "payment_method": "balance"
             });
             
-            if (response.data.url) {
-                // Redirigir a Stripe Checkout
-                 window.location.href = response.data.url;
+            if (response.data && response.data.reservaciones && response.data.reservaciones.length > 0) {
+                const idReservacion = response.data.reservaciones[0].id_reservacion;
+                const reservaciones = response.data.reservaciones;
+                const totalDescontado = response.data.total_descontado || 0;
+                const saldoRestante = response.data.saldo_restante || 0;
+                
+                // Mostrar éxito con las reservaciones
+                await Swal.fire({
+                    icon: 'success',
+                    title: '¡Compra Exitosa!',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Tu compra ha sido procesada exitosamente.</strong></p>
+                            <p><strong>Reservaciones creadas:</strong></p>
+                            ${reservaciones.map((res, index) => `
+                                <div style="background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                                    <p><strong>ID Reservación:</strong> ${res.id_reservacion || 'N/A'}</p>
+                                    <p><strong>Fecha:</strong> ${res.fecha_ida ? formatearFecha(res.fecha_ida) : 'N/A'}</p>
+                                    <p><strong>Hora:</strong> ${res.horaCompleta || 'N/A'}</p>
+                                    <p><strong>Boletos:</strong> ${res.boletos || res.total_boletos || 'N/A'}</p>
+                                </div>
+                            `).join('')}
+                            <div style="background: #e8f5e8; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #10b981;">
+                                <p><strong>Total descontado:</strong> $${totalDescontado.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</p>
+                                <p><strong>Saldo restante:</strong> $${saldoRestante.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</p>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonColor: '#10b981',
+                    confirmButtonText: 'Hacer Nueva Compra',
+                    didOpen: applySweetAlertStyles
+                });
+                
+                // Actualizar saldo del usuario con el saldo restante de la API
+                setContactInfo(prev => ({ ...prev, saldo: saldoRestante }));
+                
+                // Resetear el formulario para nueva compra
+                resetFormForNewPurchase();
+                
             } else {
-                throw new Error('No se pudo iniciar el proceso de pago');
+                throw new Error('No se recibió una respuesta válida del servidor');
             }
             
         } catch (error) {
-            console.error('Error al procesar el pago con Stripe:', error);
-            let errorMessage = 'Ocurrió un error al procesar tu pago. Por favor, intenta nuevamente.';
+            console.error('Error al procesar la compra con saldo:', error);
+            let errorMessage = 'Ocurrió un error al procesar tu compra. Por favor, intenta nuevamente.';
             
             // Handle different types of errors
             if (error.response) {
                 // Server responded with an error status code (4xx, 5xx)
-                errorMessage = error.response.data?.error || error.response.data?.message || error.response.statusText || errorMessage;
+                const errorData = error.response.data;
+                
+                // Manejar errores específicos de disponibilidad
+                if (errorData.error && errorData.msg && errorData.msg.includes('disponibilidad')) {
+                    if (errorData.item_sin_disponibilidad) {
+                        const item = errorData.item_sin_disponibilidad;
+                        errorMessage = `
+                            <div style="text-align: left;">
+                                <p><strong>No hay suficientes boletos disponibles:</strong></p>
+                                <p><strong>Fecha:</strong> ${new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <p><strong>Hora:</strong> ${item.hora || item.horaCompleta || 'N/A'}</p>
+                                <p><strong>Boletos solicitados:</strong> ${item.boletos_solicitados}</p>
+                                <p><strong>Disponibilidad actual:</strong> ${item.disponibilidad_actual} boletos</p>
+                                <p style="color: #dc2626; margin-top: 10px;"><strong>Por favor, reduce la cantidad de boletos o selecciona otro horario.</strong></p>
+                            </div>
+                        `;
+                    } else {
+                        errorMessage = errorData.msg || 'No hay disponibilidad suficiente para los boletos solicitados.';
+                    }
+                } else {
+                    errorMessage = errorData.error || errorData.message || errorData.msg || errorMessage;
+                }
             } else if (error.request) {
                 // Request was made but no response was received
                 errorMessage = 'No se recibió respuesta del servidor. Por favor, verifica tu conexión a internet.';
@@ -671,118 +1008,12 @@ const VentasPage = () => {
             // Show error message
             await Swal.fire({
                 icon: 'error',
-                title: 'Error al procesar el pago',
-                text: errorMessage,
+                title: 'Error al procesar la compra',
+                html: errorMessage,
                 confirmButtonColor: '#a01e24',
-                confirmButtonText: 'Entendido'
+                confirmButtonText: 'Entendido',
+                didOpen: applySweetAlertStyles
             });
-        } finally {
-            setStripeLoading(false);
-            //Swal.close();
-        }
-    };
-
-    const handlePayment = async () => {
-        try {
-            // Deshabilitar botones
-            setIsPaymentInProgress(true);
-
-            // Validar que el carrito no esté vacío
-            if (cartItems.length === 0) {
-                toast.error('El carrito está vacío');
-                return;
-            }
-
-            // Validar que se compren mínimo 10 boletos en total y máximo 100 boletos por fecha
-            const totalTickets = getCartTotalVisitors();
-            
-            if (totalTickets < 10) {
-                toast.error(`Necesitas comprar al menos 10 boletos en total. Actualmente tienes ${totalTickets} boletos.`);
-                return;
-            }
-
-            // Validar máximo 100 boletos por fecha
-            const ticketsByDate = {};
-            cartItems.forEach(item => {
-                const dateKey = item.date.toISOString().split('T')[0];
-                if (!ticketsByDate[dateKey]) {
-                    ticketsByDate[dateKey] = 0;
-                }
-                ticketsByDate[dateKey] += item.quantity;
-            });
-
-            for (const [date, ticketsForDate] of Object.entries(ticketsByDate)) {
-                if (ticketsForDate > 100) {
-                    toast.error(`Para el día ${new Date(date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} el máximo permitido es de 100 boletos. Actualmente tienes ${ticketsForDate} boletos.`);
-                    return;
-                }
-            }
-
-            const nombre = contactInfo.nombres.trim();
-            const apellidos = contactInfo.apellidos.trim();
-            const telefono = contactInfo.telefono;
-            const correo = contactInfo.correo;
-
-            // Validar datos requeridos
-            if (!nombre || !apellidos || !correo) {
-                toast.error('Faltan datos requeridos para procesar el pago');
-                return;
-            }
-
-            const totalAmount = getCartTotal();
-            const totalVisitors = getCartTotalVisitors();
-
-            console.log('Preparando datos para pago con carrito:', {
-                tourId,
-                cartItems: cartItems.length,
-                totalVisitors,
-                nombre,
-                apellidos,
-                correo,
-                telefono,
-                total: totalAmount
-            });
-
-            // Preparar los items del carrito para el backend
-            const cartItemsForBackend = cartItems.map(item => ({
-                fecha: item.date.toISOString().split('T')[0],
-                hora: item.time,
-                cantidad: item.quantity,
-                subtotal: item.subtotal
-            }));
-
-            const endpoint = '/venta/crear-admin-carrito'; // Nuevo endpoint para carrito
-
-            const response = await clienteAxios.post(endpoint, {
-                "no_boletos": parseInt(totalVisitors),
-                "cart_items": JSON.stringify(cartItemsForBackend),
-                "pagado": 1,
-                "comision": 2.3,
-                "status_traspaso": 1,
-                "nombre_cliente": nombre,
-                "apellidos_cliente": apellidos,
-                "telefono": telefono,
-                "correo": correo,
-                "tourId": tourId,
-                "total": totalAmount
-            });
-
-            console.log('Respuesta de la API:', response.data);
-
-            if (response.data && response.data.id_reservacion) {
-                toast.success(`Transacción aprobada. ID Reservación: ${response.data.id_reservacion}`);
-                // Mostrar código QR con el ID de reservación
-                setReservationId(response.data.id_reservacion);
-                setClientExist(response.data.clienteExiste);
-                setShowQR(true);
-            } else {
-                throw new Error('No se recibió un ID de reservación válido');
-            }
-
-        } catch (error) {
-            console.error('Error al procesar el pago:', error);
-            const errorMessage = error.response?.data?.msg || 'Error al procesar el pago. Por favor, intenta nuevamente.';
-            toast.error(errorMessage);
         } finally {
             setIsPaymentInProgress(false);
         }
@@ -794,9 +1025,35 @@ const VentasPage = () => {
             return toast.warn('Selecciona una fecha');
         }
         if (currentStep === 2) {
-            // Permitir continuar al carrito si ya hay items
-            if (cartItems.length === 0 && !selectedTime) {
-                return toast.warn('Selecciona al menos un boleto o agrega items al carrito primero');
+            // Permitir continuar si hay items en el carrito O si hay boletos seleccionados y horario elegido
+            const hasCartItems = cartItems.length > 0;
+            const hasBoletos = ticketQuantities.entradaTipoA > 0;
+            const hasHorario = selectedTime && selectedTime !== '' && selectedTime !== null;
+            const hasSelection = hasBoletos && hasHorario;
+            
+            console.log('Validación paso 2:', {
+                currentStep,
+                cartItemsLength: cartItems.length,
+                hasCartItems,
+                selectedTime,
+                ticketQuantities,
+                hasBoletos,
+                hasHorario,
+                hasSelection,
+                entradaTipoA: ticketQuantities.entradaTipoA,
+                availableTimes,
+                availableTimesLength: availableTimes.length
+            });
+            
+            if (!hasCartItems && !hasSelection) {
+                // Mensaje específico según lo que falta
+                if (!hasHorario) {
+                    return toast.warn('Debes seleccionar un horario para continuar');
+                } else if (!hasBoletos) {
+                    return toast.warn('Debes seleccionar al menos un boleto para continuar');
+                } else {
+                    return toast.warn('Debes seleccionar horario y boletos para continuar');
+                }
             }
         }
         if (currentStep === 3) {
@@ -842,6 +1099,16 @@ const VentasPage = () => {
                                     {tourData ? `Compra de Boletos: ${tourData.nombre}` : 'Cargando...'}
                                 </h5>
                             </div>
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+                                <div className="flex items-center justify-center">
+                                    <div className="text-center">
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Saldo disponible</p>
+                                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                            ${contactInfo.saldo ? contactInfo.saldo.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} MXN
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                             <div className="card-body p-6">
                                 <div className="flex justify-center items-center gap-4 my-6">
                                     {['Fecha', 'Boletos', 'Carrito', 'Datos', 'Resumen'].map((label, index) => (
@@ -886,14 +1153,21 @@ const VentasPage = () => {
                                                     <div className="flex flex-col sm:flex-row gap-3">
                                                         <button
                                                             type="button"
+                                                            className={`btn btn-outline-success ${stripeLoading ? 'btn-disabled' : ''}`}
+                                                            onClick={handleLoadBalance}
+                                                            disabled={stripeLoading}
+                                                        >
+                                                            {stripeLoading ? 'Procesando...' : 'Cargar Saldo'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
                                                             className={`btn btn-primary ${stripeLoading ? 'btn-disabled' : ''}`}
-                                                            onClick={handleStripePayment}
+                                                            onClick={handlePayment}
                                                             disabled={stripeLoading}
                                                         >
                                                             {stripeLoading ? 'Procesando...' : 'Pagar'}
                                                         </button>
                                                     </div>
-
                                                 </>
                                             )}
                                         </div>
@@ -1239,10 +1513,18 @@ const Step2 = ({ ticketQuantities, handleQtyChange, availableTimes, selectedTime
                         Horario disponible
                     </label>
                     <select
+                        key={selectedTime} // Forzar re-renderizado cuando cambia selectedTime
                         id="horario"
                         className="form-control bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 dark:focus:ring-primary-400/20 disabled:bg-slate-100 dark:disabled:bg-slate-700 disabled:border-slate-200 dark:disabled:border-slate-600"
                         value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
+                        onChange={(e) => {
+                    console.log('Select onChange:', {
+                        value: e.target.value,
+                        previousValue: selectedTime,
+                        type: typeof e.target.value
+                    });
+                    setSelectedTime(e.target.value);
+                }}
                         disabled={availableTimes.length === 0}
                     >
                         <option value="" disabled>-- Elige un horario --</option>
