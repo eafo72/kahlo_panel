@@ -133,6 +133,11 @@ export const menuItemsAdministrador = [
     link: "calendario",
   },
   {
+    title: "Usuarios",
+    icon: "heroicons:users",
+    link: "usuarios",
+  },
+  {
     title: "Visitas",
     icon: "heroicons:globe-americas",
     link: "tours",
@@ -171,6 +176,8 @@ export const menuItemsAdministrador = [
     icon: "heroicons:identification",
     link: "guias",
   },
+  
+
   {
     title: "Categorías",
     icon: "heroicons:list-bullet",

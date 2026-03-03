@@ -55,6 +55,28 @@ const Users = () => {
       },
     },
     {
+      Header: "Tipo de Usuario",
+      accessor: "tipo_usuario",
+      Cell: (row) => {
+        const rowData = row.row.original;
+        let userType = "";
+        
+        if (rowData.isClient === 1) {
+          userType = "Cliente";
+        } else if (rowData.isAdmin === 1) {
+          userType = "Administrador";
+        } else if (rowData.isOperator === 1) {
+          userType = "Tour Operador";
+        } else if (rowData.isInvestor === 1) {
+          userType = "Inversionista";
+        } else if (rowData.isPartner === 1) {
+          userType = "Partner";
+        }
+        
+        return <span>{userType}</span>;
+      },
+    },
+    {
       Header: "status",
       accessor: "status",
       Cell: (row) => {
@@ -127,6 +149,14 @@ const Users = () => {
       },
     },
     {
+      name: "Horarios",
+      icon: "heroicons:clock",
+      ActionToDo: (id) => {
+        localStorage.setItem("HorariosUser", id);
+        navigate("/usuarios/horarios");
+      },
+    },
+    {
       name: "Borrar",
       icon: "heroicons-outline:trash",
       ActionToDo: (id) => {
@@ -148,7 +178,7 @@ const Users = () => {
 
   const getUsers = async () => {
     try {
-      const res = await clienteAxios.get(`/usuario/clientes`);
+      const res = await clienteAxios.get(`/usuario/todos`);
       console.log(res.data);
       setDatos(res.data);
     } catch (error) {

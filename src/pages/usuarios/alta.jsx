@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Card from "@/components/ui/Card";
 import Textinput from "@/components/ui/Textinput";
+import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { ToastContainer } from "react-toastify";
 import { toast } from "react-toastify";
@@ -16,6 +17,7 @@ const UsuariosAlta = () => {
   const [password, setPassword] = useState();
   const [telefono, setTelefono] = useState();
   const [telefono_emergencia, setTelefonoEmergencia] = useState();
+  const [tipo_usuario, setTipoUsuario] = useState('Administrador');
 
   const navigate = useNavigate();
 
@@ -46,6 +48,8 @@ const UsuariosAlta = () => {
       mostrarMensaje("Debes escribir un teléfono");  
     }else if(telefono_emergencia == "" || telefono_emergencia == undefined) {
       mostrarMensaje("Debes escribir un teléfono de emergencia");  
+    }else if(tipo_usuario == "" || tipo_usuario == undefined) {
+      mostrarMensaje("Debes seleccionar un tipo de usuario");
     }else if(password == "" || password == undefined) {
       mostrarMensaje("Debes escribir una contraseña");    
     } else {
@@ -60,7 +64,7 @@ const UsuariosAlta = () => {
           mostrarMensaje(error.response.data.msg);
         }
       };
-      createUser({ nombres, apellidos, correo, telefono, telefono_emergencia, password });
+      createUser({ nombres, apellidos, correo, telefono, telefono_emergencia, password, tipo_usuario });
     }
   };
 
@@ -114,6 +118,15 @@ const UsuariosAlta = () => {
                 placeholder="Teléfono de emergencia"
                 id="telefono_emergencia"
                 type="tel"
+              />
+
+              {/*Tipo de Usuario*/}
+              <Select
+                label="Tipo de Usuario *"
+                placeholder="Selecciona un tipo de usuario"
+                options={["Administrador", "Cliente", "Inversionista", "Partner", "Tour Operador"]}
+                onChange={(e) => setTipoUsuario(e.target.value)}
+                id="tipo_usuario"
               />
 
               {/*Password*/}
