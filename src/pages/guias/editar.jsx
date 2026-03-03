@@ -23,6 +23,10 @@ const GuiasEditar = () => {
   const [cargo, setCargo] = useState();
   const [area, setArea] = useState();
   const [nss, setNss] = useState();
+  const [hora_entrada, setHora_entrada] = useState();
+  const [hora_salida, setHora_salida] = useState();
+  const [hora_salida_comer, setHora_salida_comer] = useState();
+  const [hora_regreso_comer, setHora_regreso_comer] = useState();
 
   const [fotoOld, setFotoOld] = useState();
   const [empresa_id, setEmpresa] = useState();
@@ -60,6 +64,10 @@ const GuiasEditar = () => {
       setCargo(res.data[0].cargo);
       setArea(res.data[0].area);
       setNss(res.data[0].nss);
+      setHora_entrada(res.data[0].hora_entrada);
+      setHora_salida(res.data[0].hora_salida);
+      setHora_salida_comer(res.data[0].hora_salida_comer);
+      setHora_regreso_comer(res.data[0].hora_regreso_comer);
 
       setEmpresa({
         label: res.data[0].empresa,
@@ -117,6 +125,14 @@ const GuiasEditar = () => {
       mostrarMensaje("Debes escribir el área");
     } else if (nss == "" || nss == undefined) {
       mostrarMensaje("Debes escribir el NSS");
+    } else if (hora_entrada == "" || hora_entrada == undefined) {
+      mostrarMensaje("Debes escribir la hora de entrada");
+    } else if (hora_salida == "" || hora_salida == undefined) {
+      mostrarMensaje("Debes escribir la hora de salida");
+    } else if (hora_salida_comer == "" || hora_salida_comer == undefined) {
+      mostrarMensaje("Debes escribir la hora de salida de comer");
+    } else if (hora_regreso_comer == "" || hora_regreso_comer == undefined) {
+      mostrarMensaje("Debes escribir la hora de regreso de comer");
     } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
     } else {
@@ -135,7 +151,11 @@ const GuiasEditar = () => {
               empresa_id: empresa_id.value,
               cargo,
               area,
-              nss
+              nss,
+              hora_entrada,
+              hora_salida,
+              hora_salida_comer,
+              hora_regreso_comer
             },
             headers: { "Content-Type": "multipart/form-data" },
           });
@@ -236,6 +256,46 @@ const GuiasEditar = () => {
                   id="nss"
                   type="text"
                   defaultValue={nss}
+                />
+
+                {/*Hora Entrada*/}
+                <Textinput
+                  onChange={(e) => setHora_entrada(e.target.value)}
+                  label="Hora Entrada"
+                  placeholder="Hora Entrada"
+                  id="hora_entrada"
+                  type="time"
+                  defaultValue={hora_entrada}
+                />
+
+                {/*Hora Salida*/}
+                <Textinput
+                  onChange={(e) => setHora_salida(e.target.value)}
+                  label="Hora Salida"
+                  placeholder="Hora Salida"
+                  id="hora_salida"
+                  type="time"
+                  defaultValue={hora_salida}
+                />
+
+                {/*Hora Salida Comer*/}
+                <Textinput
+                  onChange={(e) => setHora_salida_comer(e.target.value)}
+                  label="Hora Salida Comer"
+                  placeholder="Hora Salida Comer"
+                  id="hora_salida_comer"
+                  type="time"
+                  defaultValue={hora_salida_comer}
+                />
+
+                {/*Hora Regreso Comer*/}
+                <Textinput
+                  onChange={(e) => setHora_regreso_comer(e.target.value)}
+                  label="Hora Regreso Comer"
+                  placeholder="Hora Regreso Comer"
+                  id="hora_regreso_comer"
+                  type="time"
+                  defaultValue={hora_regreso_comer}
                 />
 
                 {/*Foto*/}
