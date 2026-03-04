@@ -81,7 +81,8 @@ const UsuariosHorarios = () => {
         descanso: formData[dia.key].activo === 1 ? 0 : 1
       }));
 
-      const res = await clienteAxios.post('/venta/horarios-usuario', {
+      const res = await clienteAxios.post('/venta/horarios-usuario-crear', {
+        id_usuario: parseInt(id),
         horarios: horariosToCreate
       });
 
