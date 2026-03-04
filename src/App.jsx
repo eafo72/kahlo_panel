@@ -85,6 +85,8 @@ const ColaboradoresQR = lazy(() => import("./pages/colaboradores"));
 
 const Checkin = lazy(() => import("./pages/checkin"));
 
+const Checador = lazy(() => import("./pages/checador"));
+
 const Canceladas = lazy(() => import("./pages/canceladas"));
 
 const NoPage = lazy(() => import("./pages/404"));
@@ -195,6 +197,8 @@ function App() {
           <Route path="colaboradores" element={<ColaboradoresQR />} />
 
           <Route path="checkin" element={<Checkin />} />
+
+          <Route path="checador" element={<Checador />} />
 
           <Route path="canceladas" element={<Canceladas />} />
 

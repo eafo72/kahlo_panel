@@ -171,6 +171,10 @@ const Users = () => {
 
   const [datos, setDatos] = useState([]);
 
+  const [showJumpInput, setShowJumpInput] = useState(false);
+  const [jumpTarget, setJumpTarget] = useState(null);
+  const [jumpValue, setJumpValue] = useState("");
+
   const userCtx = useContext(UserContext);
   const { authStatus, verifyingToken } = userCtx;
 
@@ -238,6 +242,36 @@ const Users = () => {
   useEffect(() => {
     setPageSize(20); // 👈 ahora cada página tendrá 20 registros
   }, [setPageSize]);
+
+  const getVisiblePages = () => {
+    const totalPages = pageCount;
+    const current = pageIndex;
+
+    const delta = 2;
+    const range = [];
+
+    if (totalPages <= 7) {
+      for (let i = 0; i < totalPages; i++) range.push(i);
+      return range;
+    }
+
+    range.push(0);
+
+    const start = Math.max(1, current - delta);
+    const end = Math.min(totalPages - 2, current + delta);
+
+    if (start > 1) range.push("dots-left");
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    if (end < totalPages - 2) range.push("dots-right");
+
+    range.push(totalPages - 1);
+
+    return range;
+  };
   return (
     <>
       <Card noborder>
@@ -345,40 +379,123 @@ const Users = () => {
               </span>
             </span>
           </div>
-          <ul className="flex flex-wrap justify-center gap-2 mt-4">
+          <ul className="flex flex-wrap justify-center gap-2 mt-4 items-center">
+            {/* Primera página */}
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${pageIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => gotoPage(0)}
+                disabled={pageIndex === 0}
+                title="Primera página"
+              >
+                <Icon icon="heroicons-outline:chevron-double-left" />
+              </button>
+            </li>
+
+            {/* Anterior */}
+            <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
+              <button
+                className={`${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
+                title="Anterior"
               >
                 <Icon icon="heroicons-outline:chevron-left" />
               </button>
             </li>
-            {pageOptions.map((page, pageIdx) => (
-              <li key={pageIdx}>
-                <button
-                  href="#"
-                  aria-current="page"
-                  className={` ${pageIdx === pageIndex
-                    ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
-                    : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                    }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
-                  onClick={() => gotoPage(pageIdx)}
-                >
-                  {page + 1}
-                </button>
-              </li>
-            ))}
+
+            {/* Páginas visibles */}
+            {getVisiblePages().map((pageIdx, index) => {
+
+              // cuando son dots
+              if (pageIdx === "dots-left" || pageIdx === "dots-right") {
+                return (
+                  <li key={`${pageIdx}-${index}`} className="relative">
+                    {jumpTarget !== pageIdx ? (
+                      <button
+                        className="text-sm text-slate-500 dark:text-slate-400 px-2 select-none hover:text-slate-900 dark:hover:text-white"
+                        onClick={() => setJumpTarget(pageIdx)}
+                        title="Ir a página..."
+                      >
+                        ...
+                      </button>
+                    ) : (
+                      <input
+                        type="number"
+                        autoFocus
+                        value={jumpValue}
+                        onChange={(e) => setJumpValue(e.target.value)}
+                        onBlur={() => {
+                          setJumpTarget(null);
+                          setJumpValue("");
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            let pageNum = Number(jumpValue);
+
+                            if (!pageNum || pageNum < 1) pageNum = 1;
+                            if (pageNum > pageCount) pageNum = pageCount;
+
+                            gotoPage(pageNum - 1);
+
+                            setJumpTarget(null);
+                            setJumpValue("");
+                          }
+
+                          if (e.key === "Escape") {
+                            setJumpTarget(null);
+                            setJumpValue("");
+                          }
+                        }}
+                        className="form-control py-1 px-2 text-sm"
+                        style={{ width: "70px" }}
+                        placeholder="Pag"
+                      />
+                    )}
+                  </li>
+                );
+              }
+
+
+              // páginas normales
+              return (
+                <li key={pageIdx}>
+                  <button
+                    aria-current={pageIdx === pageIndex ? "page" : undefined}
+                    className={` ${pageIdx === pageIndex
+                      ? "bg-slate-900 dark:bg-slate-600 dark:text-slate-200 text-white font-medium"
+                      : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900 font-normal"
+                      } text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
+                    onClick={() => gotoPage(pageIdx)}
+                  >
+                    {pageIdx + 1}
+                  </button>
+                </li>
+              );
+            })}
+
+
+            {/* Siguiente */}
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                className={`${!canNextPage ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => nextPage()}
                 disabled={!canNextPage}
+                title="Siguiente"
               >
                 <Icon icon="heroicons-outline:chevron-right" />
+              </button>
+            </li>
+
+            {/* Última página */}
+            <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
+              <button
+                className={`${pageIndex === pageCount - 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => gotoPage(pageCount - 1)}
+                disabled={pageIndex === pageCount - 1}
+                title="Última página"
+              >
+                <Icon icon="heroicons-outline:chevron-double-right" />
               </button>
             </li>
           </ul>

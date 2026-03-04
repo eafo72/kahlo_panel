@@ -25,6 +25,11 @@ export const menuItems = [
     link: "usuarios",
   },
   {
+    title: "Checador",
+    icon: "heroicons:clock",
+    link: "checador",
+  },
+  {
     title: "Checkin",
     icon: "heroicons:document-check",
     link: "checkin",
@@ -136,6 +141,11 @@ export const menuItemsAdministrador = [
     title: "Usuarios",
     icon: "heroicons:users",
     link: "usuarios",
+  },
+  {
+    title: "Checador",
+    icon: "heroicons:clock",
+    link: "checador",
   },
   {
     title: "Visitas",

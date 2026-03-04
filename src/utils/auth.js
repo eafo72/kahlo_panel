@@ -18,6 +18,7 @@ const routePermissions = {
   '/colaboradores':               [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.GUIDE, ROLES.SPECIALIST],
   '/categorias':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/comentarios':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN],
+  '/checador':                    [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/checkin':                     [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/dashboard':                   [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR],
   '/empresas':                    [ROLES.SUPER_ADMIN, ROLES.ADMIN],
