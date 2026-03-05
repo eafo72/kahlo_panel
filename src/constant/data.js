@@ -30,9 +30,21 @@ export const menuItems = [
     link: "checador",
   },
   {
-    title: "Checkin",
+    title: "Autorizaciones",
     icon: "heroicons:document-check",
-    link: "checkin",
+    link: "autorizaciones",
+    child: [
+      {
+        childtitle: "Asistencia",
+        childlink: "autorizaciones/asistencia",
+        childicon: "heroicons:document-check",
+      },
+      {
+        childtitle: "Ingreso",
+        childlink: "autorizaciones/ingreso",
+        childicon: "heroicons:document-check",
+      },
+    ]
   },
   {
     title: "Colaboradores",
@@ -148,6 +160,23 @@ export const menuItemsAdministrador = [
     link: "checador",
   },
   {
+    title: "Autorizaciones",
+    icon: "heroicons:document-check",
+    link: "autorizaciones",
+    child: [
+      {
+        childtitle: "Asistencia",
+        childlink: "autorizaciones/asistencia",
+        childicon: "heroicons:document-check",
+      },
+      {
+        childtitle: "Ingreso",
+        childlink: "autorizaciones/ingreso",
+        childicon: "heroicons:document-check",
+      },
+    ]
+  },
+  {
     title: "Visitas",
     icon: "heroicons:globe-americas",
     link: "tours",
@@ -175,12 +204,6 @@ export const menuItemsAdministrador = [
     ]
 
   },
-  {
-    title: "Checkin",
-    icon: "heroicons:document-check",
-    link: "checkin",
-  },
-
   {
     title: "Colaboradores",
     icon: "heroicons:identification",

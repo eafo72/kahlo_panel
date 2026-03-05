@@ -125,14 +125,6 @@ const GuiasEditar = () => {
       mostrarMensaje("Debes escribir el área");
     } else if (nss == "" || nss == undefined) {
       mostrarMensaje("Debes escribir el NSS");
-    } else if (hora_entrada == "" || hora_entrada == undefined) {
-      mostrarMensaje("Debes escribir la hora de entrada");
-    } else if (hora_salida == "" || hora_salida == undefined) {
-      mostrarMensaje("Debes escribir la hora de salida");
-    } else if (hora_salida_comer == "" || hora_salida_comer == undefined) {
-      mostrarMensaje("Debes escribir la hora de salida de comer");
-    } else if (hora_regreso_comer == "" || hora_regreso_comer == undefined) {
-      mostrarMensaje("Debes escribir la hora de regreso de comer");
     } else if (empresa_id == "" || empresa_id == undefined) {
       mostrarMensaje("Debes seleccionar una empresa");
     } else {
@@ -256,46 +248,6 @@ const GuiasEditar = () => {
                   id="nss"
                   type="text"
                   defaultValue={nss}
-                />
-
-                {/*Hora Entrada*/}
-                <Textinput
-                  onChange={(e) => setHora_entrada(e.target.value)}
-                  label="Hora Entrada"
-                  placeholder="Hora Entrada"
-                  id="hora_entrada"
-                  type="time"
-                  defaultValue={hora_entrada}
-                />
-
-                {/*Hora Salida*/}
-                <Textinput
-                  onChange={(e) => setHora_salida(e.target.value)}
-                  label="Hora Salida"
-                  placeholder="Hora Salida"
-                  id="hora_salida"
-                  type="time"
-                  defaultValue={hora_salida}
-                />
-
-                {/*Hora Salida Comer*/}
-                <Textinput
-                  onChange={(e) => setHora_salida_comer(e.target.value)}
-                  label="Hora Salida Comer"
-                  placeholder="Hora Salida Comer"
-                  id="hora_salida_comer"
-                  type="time"
-                  defaultValue={hora_salida_comer}
-                />
-
-                {/*Hora Regreso Comer*/}
-                <Textinput
-                  onChange={(e) => setHora_regreso_comer(e.target.value)}
-                  label="Hora Regreso Comer"
-                  placeholder="Hora Regreso Comer"
-                  id="hora_regreso_comer"
-                  type="time"
-                  defaultValue={hora_regreso_comer}
                 />
 
                 {/*Foto*/}

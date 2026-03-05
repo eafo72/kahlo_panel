@@ -9,6 +9,9 @@ const Login = lazy(() => import("./pages/auth/login"));
 const Dashboard = lazy(() => import("./pages/dashboard"));
 const Calendario = lazy(() => import("./pages/calendario"));
 
+const AutorizacionesAsistencia = lazy(() => import("./pages/autorizaciones/asistencia"));
+const AutorizacionesIngreso = lazy(() => import("./pages/autorizaciones/ingreso"));
+
 const Usuarios = lazy(() => import("./pages/usuarios"));
 const UsuariosAlta = lazy(() => import("./pages/usuarios/alta"));
 const UsuariosEditar = lazy(() => import("./pages/usuarios/editar"));
@@ -83,8 +86,6 @@ const Camara = lazy(() => import("./pages/camara"));
 
 const ColaboradoresQR = lazy(() => import("./pages/colaboradores"));
 
-const Checkin = lazy(() => import("./pages/checkin"));
-
 const Checador = lazy(() => import("./pages/checador"));
 
 const Canceladas = lazy(() => import("./pages/canceladas"));
@@ -117,6 +118,9 @@ function App() {
 
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="calendario" element={<Calendario />} />
+
+          <Route path="autorizaciones/asistencia" element={<AutorizacionesAsistencia />} />
+          <Route path="autorizaciones/ingreso" element={<AutorizacionesIngreso />} />
 
           <Route path="usuarios" element={<Usuarios />} />
           <Route path="usuarios/alta" element={<UsuariosAlta />} />
@@ -195,8 +199,6 @@ function App() {
           <Route path="camara" element={<Camara />} />
 
           <Route path="colaboradores" element={<ColaboradoresQR />} />
-
-          <Route path="checkin" element={<Checkin />} />
 
           <Route path="checador" element={<Checador />} />
 

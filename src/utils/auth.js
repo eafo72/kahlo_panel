@@ -12,6 +12,7 @@ const ROLES = {
 // Route permissions - which roles can access which routes
 const routePermissions = {
   '/administradores':             [ROLES.SUPER_ADMIN],
+  '/autorizaciones':              [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/calendario':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/camara':                      [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/canceladas':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR, ROLES.GUIDE, ROLES.PARTNER],
@@ -19,7 +20,6 @@ const routePermissions = {
   '/categorias':                  [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/comentarios':                 [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/checador':                    [ROLES.SUPER_ADMIN, ROLES.ADMIN],
-  '/checkin':                     [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/dashboard':                   [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.INVESTOR],
   '/empresas':                    [ROLES.SUPER_ADMIN, ROLES.ADMIN],
   '/fotografias/alta':            [ROLES.SUPER_ADMIN, ROLES.ADMIN],
