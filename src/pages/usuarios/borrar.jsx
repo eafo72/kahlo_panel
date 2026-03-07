@@ -42,12 +42,12 @@ const UsuariosBorrar = () => {
     <>
       <ToastContainer />
       <div className="grid xl:grid-cols-2 grid-cols-1 gap-5">
-        <Card title="Borrar Usuarios">
+        <Card title="Desactivar Usuarios">
           <div className="space-y-4">
             <div className=" space-y-4 text-center">
-              <p>¿Seguro que desea borrar el usuario: {id}?</p>
+              <p>¿Seguro que desea desactivar el usuario: {id}?</p>
               <Button
-                text="Borrar"
+                text="Desactivar"
                 onClick={() => deleteUser()}
                 className="btn-danger m-5"
               />

@@ -71,6 +71,10 @@ const Users = () => {
           userType = "Inversionista";
         } else if (rowData.isPartner === 1) {
           userType = "Partner";
+        } else if (rowData.isGuia === 1) {
+          userType = "Colaborador";
+        } else if (rowData.isSpecialist === 1) {
+          userType = "Especialista";
         }
         
         return <span>{userType}</span>;
@@ -157,7 +161,7 @@ const Users = () => {
       },
     },
     {
-      name: "Borrar",
+      name: "Desactivar",
       icon: "heroicons-outline:trash",
       ActionToDo: (id) => {
         //console.log("Borrar"+id);

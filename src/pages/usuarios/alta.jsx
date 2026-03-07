@@ -124,7 +124,7 @@ const UsuariosAlta = () => {
               <Select
                 label="Tipo de Usuario *"
                 placeholder="Selecciona un tipo de usuario"
-                options={["Administrador", "Cliente", "Inversionista", "Partner", "Tour Operador"]}
+                options={["Administrador", "Cliente", "Inversionista", "Partner", "Tour Operador", "Colaborador", "Especialista"]}
                 onChange={(e) => setTipoUsuario(e.target.value)}
                 id="tipo_usuario"
               />

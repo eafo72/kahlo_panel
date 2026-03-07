@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
 import Textinput from "@/components/ui/Textinput";
+import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { ToastContainer } from "react-toastify";
 import { toast } from "react-toastify";
@@ -16,6 +17,7 @@ const UsuariosEditar = () => {
   const [telefono, setTelefono] = useState();
   const [telefono_emergencia, setTelefonoEmergencia] = useState();
   const [password, setPassword] = useState();
+  const [tipo_usuario, setTipoUsuario] = useState();
 
   const id = localStorage.getItem("EditUser");
   const getUser = async () => {
@@ -26,6 +28,7 @@ const UsuariosEditar = () => {
       setCorreo(res.data[0].correo);
       setTelefono(res.data[0].telefono);
       setTelefonoEmergencia(res.data[0].telefono_emergencia);
+      setTipoUsuario(res.data[0].tipo_usuario);
     } catch (error) {
       console.log(error);
       mostrarMensaje(error.code);
@@ -65,6 +68,8 @@ const UsuariosEditar = () => {
       mostrarMensaje("Debes escribir un teléfono");  
     }else if(telefono_emergencia == "" || telefono_emergencia == undefined) {
       mostrarMensaje("Debes escribir un teléfono de emergencia");    
+    }else if(tipo_usuario == "" || tipo_usuario == undefined) {
+      mostrarMensaje("Debes seleccionar un tipo de usuario");
     } else {
       const editUser = async () => {
         try {
@@ -75,7 +80,8 @@ const UsuariosEditar = () => {
             correo,
             telefono,
             telefono_emergencia,
-            password
+            password,
+            tipo_usuario
           });
           console.log(res);
           navigate("/usuarios");
@@ -136,6 +142,16 @@ const UsuariosEditar = () => {
                 id="telefono_emergencia"
                 type="tel"
                 defaultValue={telefono_emergencia}
+              />
+
+              {/*Tipo de Usuario*/}
+              <Select
+                label="Tipo de Usuario *"
+                placeholder="Selecciona un tipo de usuario"
+                options={["Administrador", "Cliente", "Inversionista", "Partner", "Tour Operador", "Colaborador", "Especialista"]}
+                onChange={(e) => setTipoUsuario(e.target.value)}
+                id="tipo_usuario"
+                value={tipo_usuario}
               />
 
               {/*Password*/}
