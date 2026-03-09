@@ -75,8 +75,9 @@ const Users = () => {
           userType = "Colaborador";
         } else if (rowData.isSpecialist === 1) {
           userType = "Especialista";
+        } else if (rowData.isEventual === 1) {
+          userType = "Eventual";
         }
-        
         return <span>{userType}</span>;
       },
     },
