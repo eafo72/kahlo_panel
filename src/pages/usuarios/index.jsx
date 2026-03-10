@@ -104,6 +104,64 @@ const Users = () => {
       Header: "action",
       accessor: "action",
       Cell: (row) => {
+        // Function to determine user type
+        const getUserType = (rowData) => {
+          if (rowData.isAdmin === 1) return "Administrador";
+          if (rowData.isOperator === 1) return "Tour Operador";
+          if (rowData.isInvestor === 1) return "Inversionista";
+          if (rowData.isPartner === 1) return "Partner";
+          if (rowData.isGuia === 1) return "Colaborador";
+          if (rowData.isSpecialist === 1) return "Especialista";
+          if (rowData.isEventual === 1) return "Eventual";
+          return "Cliente"; // Default case
+        };
+
+        // Get available actions for this user
+        const getAvailableActions = (rowData) => {
+          const userType = getUserType(rowData);
+          const allActions = [
+            {
+              name: "Editar",
+              icon: "heroicons:pencil-square",
+              ActionToDo: (id) => {
+                localStorage.setItem("EditUser", id);
+                navigate("/usuarios/editar");
+              },
+            },
+            {
+              name: "Horarios",
+              icon: "heroicons:clock",
+              ActionToDo: (id, rowData) => {
+                localStorage.setItem("HorariosUser", id);
+                // Check if user is eventual (isEventual === 1)
+                if (rowData.isEventual === 1) {
+                  navigate("/usuarios/horarios_eventuales");
+                } else {
+                  navigate("/usuarios/horarios");
+                }
+              },
+            },
+            {
+              name: "Desactivar",
+              icon: "heroicons-outline:trash",
+              ActionToDo: (id) => {
+                localStorage.setItem("DeleteUser", id);
+                navigate("/usuarios/borrar");
+              },
+            },
+          ];
+
+          // Filter out Horarios for Cliente users
+          return allActions.filter(action => {
+            if (action.name === "Horarios" && userType === "Cliente") {
+              return false;
+            }
+            return true;
+          });
+        };
+
+        const availableActions = getAvailableActions(row.row.original);
+
         return (
           <div>
             <Dropdown
@@ -115,10 +173,10 @@ const Users = () => {
               }
             >
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {actions.map((item, i) => (
+                {availableActions.map((item, i) => (
                   <Menu.Item key={i}>
                     <div
-                      onClick={() => item.ActionToDo(row.row.original.id)}
+                      onClick={() => item.ActionToDo(row.row.original.id, row.row.original)}
                       className={`
                   
                     ${item.name === "Borrar"
@@ -156,9 +214,14 @@ const Users = () => {
     {
       name: "Horarios",
       icon: "heroicons:clock",
-      ActionToDo: (id) => {
+      ActionToDo: (id, rowData) => {
         localStorage.setItem("HorariosUser", id);
-        navigate("/usuarios/horarios");
+        // Check if user is eventual (isEventual === 1)
+        if (rowData.isEventual === 1) {
+          navigate("/usuarios/horarios_eventuales");
+        } else {
+          navigate("/usuarios/horarios");
+        }
       },
     },
     {

@@ -17,6 +17,7 @@ const UsuariosAlta = lazy(() => import("./pages/usuarios/alta"));
 const UsuariosEditar = lazy(() => import("./pages/usuarios/editar"));
 const UsuariosBorrar = lazy(() => import("./pages/usuarios/borrar"));
 const UsuariosHorarios = lazy(() => import("./pages/usuarios/horarios"));
+const UsuariosHorariosEventuales = lazy(() => import("./pages/usuarios/horarios_eventuales"));
 
 const Guias = lazy(() => import("./pages/guias"));
 const GuiasAlta = lazy(() => import("./pages/guias/alta"));
@@ -127,6 +128,7 @@ function App() {
           <Route path="usuarios/editar" element={<UsuariosEditar />} />
           <Route path="usuarios/borrar" element={<UsuariosBorrar />} />
           <Route path="usuarios/horarios" element={<UsuariosHorarios />} />
+          <Route path="usuarios/horarios_eventuales" element={<UsuariosHorariosEventuales />} />
 
           <Route path="guias" element={<Guias />} />
           <Route path="guias/alta" element={<GuiasAlta />} />

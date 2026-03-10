@@ -72,6 +72,21 @@ const Guias = () => {
       },
     },
     {
+      Header: "Tipo de Usuario",
+      accessor: "tipo_usuario",
+      Cell: (row) => {
+        const rowData = row.row.original;
+        let userType = "";
+        
+        if (rowData.isGuia === 1) {
+          userType = "Colaborador";
+        } else if (rowData.isSpecialist === 1) {
+          userType = "Especialista";
+        }
+        return <span>{userType}</span>;
+      },
+    },
+    {
       Header: "Status",
       accessor: "status",
       Cell: (row) => {
