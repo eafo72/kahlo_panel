@@ -14,6 +14,7 @@ import GlobalFilter from "../table/react-tables/GlobalFilter";
 
 import { useNavigate } from "react-router-dom";
 import clienteAxios from '../../configs/axios';
+import { downloadExcel } from "react-export-table-to-excel";
 import { UserContext } from "../../pages/context/userContext";
 
 
@@ -77,7 +78,7 @@ const Guias = () => {
       Cell: (row) => {
         const rowData = row.row.original;
         let userType = "";
-        
+
         if (rowData.isGuia === 1) {
           userType = "Colaborador";
         } else if (rowData.isSpecialist === 1) {
@@ -93,20 +94,18 @@ const Guias = () => {
         return (
           <span className="block w-full">
             <span
-              className={` inline-block px-3 min-w-[90px] text-center mx-auto py-1 rounded-[999px] bg-opacity-25 ${
-                row?.cell?.value === 1
+              className={` inline-block px-3 min-w-[90px] text-center mx-auto py-1 rounded-[999px] bg-opacity-25 ${row?.cell?.value === 1
                   ? "text-success-500 bg-success-500"
                   : ""
-              } 
-              ${
-                row?.cell?.value === 0
+                } 
+              ${row?.cell?.value === 0
                   ? "text-danger-500 bg-danger-500"
                   : ""
-              }
+                }
               
                `}
             >
-              {row?.cell?.value === 1 ? "Activo":"Desactivado"}
+              {row?.cell?.value === 1 ? "Activo" : "Desactivado"}
             </span>
           </span>
         );
@@ -133,11 +132,10 @@ const Guias = () => {
                       onClick={() => item.ActionToDo(row.row.original.id)}
                       className={`
                   
-                    ${
-                      item.name === "Borrar"
-                        ? "bg-danger-500 text-danger-500 bg-opacity-30   hover:bg-opacity-100 hover:text-white"
-                        : "hover:bg-slate-900 hover:text-white dark:hover:bg-slate-600 dark:hover:bg-opacity-50"
-                    }
+                    ${item.name === "Borrar"
+                          ? "bg-danger-500 text-danger-500 bg-opacity-30   hover:bg-opacity-100 hover:text-white"
+                          : "hover:bg-slate-900 hover:text-white dark:hover:bg-slate-600 dark:hover:bg-opacity-50"
+                        }
                      w-full border-b border-b-gray-500 border-opacity-10 px-4 py-2 text-sm  last:mb-0 cursor-pointer 
                      first:rounded-t last:rounded-b flex  space-x-2 items-center rtl:space-x-reverse `}
                     >
@@ -155,16 +153,32 @@ const Guias = () => {
       },
     },
   ];
-  
+
   const actions = [
-    
+
     {
       name: "Editar",
       icon: "heroicons:pencil-square",
       ActionToDo: (id) => {
         //console.log("Editar"+id);
-        localStorage.setItem("EditGuia",id);
+        localStorage.setItem("EditGuia", id);
         navigate("/guias/editar");
+      },
+    },
+    {
+      name: "Horarios",
+      icon: "heroicons:clock",
+      ActionToDo: (id, rowData) => {
+        localStorage.setItem("HorariosUser", id);
+        // Check if user is eventual (isEventual === 1)
+        /*
+        if (rowData.isEventual === 1) {
+          navigate("/usuarios/horarios_eventuales");
+        } else {
+          navigate("/usuarios/horarios");
+        }
+        */
+        navigate("/usuarios/horarios", { state: { returnTo: "/guias" } });
       },
     },
     {
@@ -172,66 +186,107 @@ const Guias = () => {
       icon: "heroicons-outline:trash",
       ActionToDo: (id) => {
         //console.log("Borrar"+id);
-        localStorage.setItem("DeleteGuia",id);
+        localStorage.setItem("DeleteGuia", id);
         navigate("/guias/borrar");
       },
     },
   ];
-  
+
   const columns = useMemo(() => COLUMNS, []);
 
   const [datos, setDatos] = useState([]);
-  
+  const [datosOriginales, setDatosOriginales] = useState([]);
+
   const userCtx = useContext(UserContext);
   const { user, authStatus, verifyingToken } = userCtx;
-  
+
   const navigate = useNavigate();
 
-  const getGuias = async (tipoUsuario,idempresa) => {
+  const getGuias = async (tipoUsuario, idempresa) => {
     //console.log("TipoUsuario:"+tipoUsuario);
     //tipoUsuario == 1 SuperAdmin
     //tipoUsuario == 2 Administrador
 
-    if(parseInt(tipoUsuario) == 1){
+    if (parseInt(tipoUsuario) == 1) {
       try {
         const res = await clienteAxios.get(`/admin/guia/guias`);
         console.log(res.data);
         setDatos(res.data);
+        setDatosOriginales(res.data);
       } catch (error) {
         console.log(error)
       }
-    }else{
+    } else {
       try {
         const res = await clienteAxios.get(`/admin/guia/obtenerByEmpresa/${idempresa}`);
         console.log(res.data);
         setDatos(res.data);
+        setDatosOriginales(res.data);
       } catch (error) {
         console.log(error)
-      } 
-    }  
+      }
+    }
   }
   useEffect(() => {
     verifyingToken();
     //console.log(user);
-    if(authStatus === false) {
+    if (authStatus === false) {
       //navigate("/");
     }
-    if(user && user[0].isSuperAdmin == 1){
-      getGuias(1,user[0].empresa_id);
+    if (user && user[0].isSuperAdmin == 1) {
+      getGuias(1, user[0].empresa_id);
     }
-    if(user && user[0].isAdmin == 1){
-      getGuias(2,user[0].empresa_id);
+    if (user && user[0].isAdmin == 1) {
+      getGuias(2, user[0].empresa_id);
     }
     //console.log(datos);
-  },[authStatus])
+  }, [authStatus])
 
-  
+
   const handleAlta = () => {
     navigate("/guias/alta");
   }
-  
-  
+
+
   const data = useMemo(() => datos, [datos]);
+
+  const header = [
+    "Id",
+    "Nombres",
+    "Apellidos",
+    "Correo",
+    "Cargo",
+    "Area",
+    "NSS",
+    "Tipo de Usuario",
+    "Status",
+  ];
+
+  function handleDownloadExcel() {
+    let newDatos = [];
+    for (let i = 0; i < datos.length; i++) {
+      newDatos.push({
+        "id": datos[i]['id'],
+        "nombres": datos[i]['nombres'],
+        "apellidos": datos[i]['apellidos'],
+        "correo": datos[i]['correo'],
+        "cargo": datos[i]['cargo'],
+        "area": datos[i]['area'],
+        "nss": datos[i]['nss'],
+        "tipo_usuario": (datos[i].isGuia === 1) ? 'Colaborador' : (datos[i].isSpecialist === 1 ? 'Especialista' : ''),
+        "status": datos[i]['status']
+      })
+    }
+
+    downloadExcel({
+      fileName: "kahlo_colaboradores",
+      sheet: "colaboradores",
+      tablePayload: {
+        header,
+        body: newDatos,
+      },
+    });
+  }
 
   const tableInstance = useTable(
     {
@@ -243,7 +298,7 @@ const Guias = () => {
     useSortBy,
     usePagination,
     useRowSelect,
-    
+
   );
   const {
     getTableProps,
@@ -271,6 +326,7 @@ const Guias = () => {
         <div className="md:flex justify-between items-center mb-6">
           <h4 className="card-title">Colaboradores</h4>
           <button onClick={(e) => handleAlta(e)} className="btn btn-success">Agregar nuevo</button>
+          <button className="btn btn-success m-2" onClick={handleDownloadExcel}>Exportar</button>
           <div>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
@@ -360,9 +416,8 @@ const Guias = () => {
           <ul className="flex items-center  space-x-3  rtl:space-x-reverse">
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${
-                  !canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
               >
@@ -374,11 +429,10 @@ const Guias = () => {
                 <button
                   href="#"
                   aria-current="page"
-                  className={` ${
-                    pageIdx === pageIndex
+                  className={` ${pageIdx === pageIndex
                       ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
                       : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                  }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
+                    }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
                   onClick={() => gotoPage(pageIdx)}
                 >
                   {page + 1}
@@ -387,9 +441,8 @@ const Guias = () => {
             ))}
             <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
               <button
-                className={` ${
-                  !canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 onClick={() => nextPage()}
                 disabled={!canNextPage}
               >

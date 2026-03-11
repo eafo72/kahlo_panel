@@ -3,17 +3,21 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { ToastContainer } from "react-toastify";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import clienteAxios from "@/configs/axios";
 
 const UsuariosHorarios = () => {
   const id = localStorage.getItem("HorariosUser");
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location && location.state && location.state.returnTo) || localStorage.getItem("HorariosOrigin") || "/usuarios";
   const [horarios, setHorarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [editingHorario, setEditingHorario] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [formData, setFormData] = useState({
     lunes: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
@@ -69,6 +73,44 @@ const UsuariosHorarios = () => {
     }));
   };
 
+  const handleEdit = (horarioInicial) => {
+    // Cargar TODOS los horarios existentes en el formulario
+    const updatedFormData = { ...formData };
+    
+    horarios.forEach(horario => {
+      const diaKey = diasSemana.find(d => d.dia_semana === horario.dia_semana)?.key;
+      if (diaKey) {
+        updatedFormData[diaKey] = {
+          hora_entrada: horario.hora_entrada,
+          hora_salida: horario.hora_salida,
+          tolerancia_minutos: horario.tolerancia_minutos,
+          activo: horario.descanso === 0 ? 1 : 0
+        };
+      }
+    });
+    
+    setFormData(updatedFormData);
+    setEditingHorario(horarioInicial);
+    setIsEditMode(true);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingHorario(null);
+    setIsEditMode(false);
+    setShowForm(false);
+    // Reset form to default values
+    setFormData({
+      lunes: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
+      martes: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
+      miercoles: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
+      jueves: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
+      viernes: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 1 },
+      sabado: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 0 },
+      domingo: { hora_entrada: '', hora_salida: '', tolerancia_minutos: 15, activo: 0 }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -81,18 +123,67 @@ const UsuariosHorarios = () => {
         descanso: formData[dia.key].activo === 1 ? 0 : 1
       }));
 
-      const res = await clienteAxios.post('/venta/horarios-usuario-crear', {
-        id_usuario: parseInt(id),
-        horarios: horariosToCreate
-      });
+      if (isEditMode && editingHorario) {
+        // Modo edición - actualizar todos los horarios modificados
+        const horariosToUpdate = diasSemana.map(dia => {
+          const formDataDia = formData[dia.key];
+          const existingHorario = horarios.find(h => h.dia_semana === dia.dia_semana);
+          const isActive = formDataDia?.activo === 1;
+          
+          // Para Sábado (6) y Domingo (7), si están inactivos, asegurar que descanso = 1
+          const isWeekend = dia.dia_semana === 6 || dia.dia_semana === 7;
+          const descanso = (!isActive || isWeekend) ? 1 : 0;
+          
+          return {
+            id: existingHorario?.id,
+            id_usuario: parseInt(id),
+            dia_semana: dia.dia_semana,
+            hora_entrada: isActive ? (formDataDia?.hora_entrada || '') : null,
+            hora_salida: isActive ? (formDataDia?.hora_salida || '') : null,
+            tolerancia_minutos: formDataDia?.tolerancia_minutos || 15,
+            activo: isActive ? 1 : 0,  // Enviar activo para que la API lo use
+            descanso: descanso  // Mantener por si acaso
+          };
+        }).filter(h => h.id); // Solo enviar horarios que existen (tienen ID)
 
-      toast.success("Horarios creados exitosamente");
-      setShowForm(false);
+        // Enviar todos los horarios para actualizarlos individualmente
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const horarioData of horariosToUpdate) {
+          try {
+            await clienteAxios.post('/venta/horarios-usuario-actualizar', horarioData);
+            successCount++;
+          } catch (error) {
+            errorCount++;
+            // No lanzar el error para que continúe con los demás días
+          }
+        }
+        
+        if (successCount > 0) {
+          if (errorCount === 0) {
+            toast.success("¡Horarios actualizados exitosamente!");
+          } else {
+            toast.success(`¡Horarios actualizados! ${successCount} días modificados correctamente`);
+          }
+        } else {
+          toast.error("No se pudo actualizar ningún horario");
+        }
+      } else {
+        // Modo creación - crear todos los horarios
+        const res = await clienteAxios.post('/venta/horarios-usuario-crear', {
+          id_usuario: parseInt(id),
+          horarios: horariosToCreate
+        });
+        toast.success("Horarios creados exitosamente");
+      }
+
+      handleCancelEdit(); // Reset form and edit state
       getHorarios(); // Refresh the list
       
     } catch (error) {
       console.log(error);
-      toast.error(error.response?.data?.message || "Error creando los horarios");
+      toast.error(error.response?.data?.message || (isEditMode ? "Error actualizando el horario" : "Error creando los horarios"));
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +195,7 @@ const UsuariosHorarios = () => {
       getHorarios();
     } else {
       toast.error("No se encontró el ID del usuario");
-      navigate("/usuarios");
+      navigate(returnTo);
     }
   }, [id, navigate]);
 
@@ -116,22 +207,38 @@ const UsuariosHorarios = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Lista de Horarios</h3>
-              <Button 
-                onClick={() => navigate("/usuarios")}
-                className="btn btn-secondary"
-              >
-                Volver a Usuarios
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  text="Editar Horarios"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    // Cargar el primer horario para iniciar edición
+                    if (horarios.length > 0) {
+                      handleEdit(horarios[0]);
+                    }
+                  }}
+                >
+                  Editar Horarios
+                </Button>
+                <Button 
+                  onClick={() => navigate(returnTo)}
+                  className="btn btn-secondary"
+                >
+                  Volver
+                </Button>
+              </div>
             </div>
             
             {loading ? (
               <div className="text-center py-8">
                 <p>Cargando horarios...</p>
               </div>
-            ) : showForm && horarios.length === 0 ? (
+            ) : showForm ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
-                  <h4 className="text-md font-semibold mb-4">Configurar Horarios Semanales</h4>
+                  <h4 className="text-md font-semibold mb-4">
+                    {isEditMode ? 'Editar Horario' : 'Configurar Horarios Semanales'}
+                  </h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {diasSemana.map((dia) => (
@@ -200,7 +307,7 @@ const UsuariosHorarios = () => {
                 <div className="flex justify-end space-x-2">
                   <Button 
                     type="button"
-                    onClick={() => setShowForm(false)}
+                    onClick={handleCancelEdit}
                     className="btn btn-secondary"
                     disabled={submitting}
                   >
@@ -211,11 +318,11 @@ const UsuariosHorarios = () => {
                     className="btn btn-primary"
                     disabled={submitting}
                   >
-                    {submitting ? "Guardando..." : "Guardar Horarios"}
+                    {submitting ? (isEditMode ? "Actualizando..." : "Guardando...") : (isEditMode ? "Actualizar Horario" : "Guardar Horarios")}
                   </Button>
                 </div>
               </form>
-            ) : horarios.length === 0 ? (
+            ) : !showForm && horarios.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-slate-500 dark:text-slate-400 mb-4">
                   No se encontraron horarios para este usuario

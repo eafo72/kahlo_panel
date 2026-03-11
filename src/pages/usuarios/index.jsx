@@ -137,7 +137,7 @@ const Users = () => {
                 if (rowData.isEventual === 1) {
                   navigate("/usuarios/horarios_eventuales");
                 } else {
-                  navigate("/usuarios/horarios");
+                  navigate("/usuarios/horarios", { state: { returnTo: "/usuarios" } });
                 }
               },
             },
@@ -201,39 +201,7 @@ const Users = () => {
     },
   ];
 
-  const actions = [
-    {
-      name: "Editar",
-      icon: "heroicons:pencil-square",
-      ActionToDo: (id) => {
-        //console.log("Editar"+id);
-        localStorage.setItem("EditUser", id);
-        navigate("/usuarios/editar");
-      },
-    },
-    {
-      name: "Horarios",
-      icon: "heroicons:clock",
-      ActionToDo: (id, rowData) => {
-        localStorage.setItem("HorariosUser", id);
-        // Check if user is eventual (isEventual === 1)
-        if (rowData.isEventual === 1) {
-          navigate("/usuarios/horarios_eventuales");
-        } else {
-          navigate("/usuarios/horarios");
-        }
-      },
-    },
-    {
-      name: "Desactivar",
-      icon: "heroicons-outline:trash",
-      ActionToDo: (id) => {
-        //console.log("Borrar"+id);
-        localStorage.setItem("DeleteUser", id);
-        navigate("/usuarios/borrar");
-      },
-    },
-  ];
+  
 
   const columns = useMemo(() => COLUMNS, []);
 
