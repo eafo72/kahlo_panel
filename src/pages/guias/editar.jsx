@@ -299,7 +299,7 @@ const GuiasEditar = () => {
 
           <Card title="Documentos Actuales">
             <p >Foto:</p>
-            <img src={fotoOld} className="w-full h-full" />
+            <img src={fotoOld} style={{maxHeight:"100%", maxWidth:"100%"}} />
           </Card>
         </div>
       )}
