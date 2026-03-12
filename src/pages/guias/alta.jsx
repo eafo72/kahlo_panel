@@ -57,6 +57,12 @@ const GuiasAlta = () => {
   const sendData = (event) => {
     event.preventDefault();
 
+    // Validar tamaño de la foto (1MB = 1 * 1024 * 1024 bytes)
+    if (foto && foto.size > 1 * 1024 * 1024) {
+      const tamañoMB = (foto.size / (1024 * 1024)).toFixed(2);
+      mostrarMensaje(`La foto seleccionada (${tamañoMB}MB) excede el límite permitido de 1MB. Por favor, selecciona una imagen más pequeña.`);
+      return; // Detener la ejecución hasta que seleccione una foto válida
+    }
 
 
     //validamos campos
@@ -245,7 +251,7 @@ const GuiasAlta = () => {
                 {/*Foto*/}
                 <Textinput
                   onChange={(e) => setFoto(e.target.files[0])}
-                  label="Foto *"
+                  label="Foto * (Tamaño recomendado: 200x200px)"
                   placeholder="Foto"
                   id="foto"
                   type="file"
