@@ -132,7 +132,7 @@ const Guias = () => {
                       onClick={() => item.ActionToDo(row.row.original.id)}
                       className={`
                   
-                    ${item.name === "Borrar"
+                    ${item.name === "Desactivar"
                           ? "bg-danger-500 text-danger-500 bg-opacity-30   hover:bg-opacity-100 hover:text-white"
                           : "hover:bg-slate-900 hover:text-white dark:hover:bg-slate-600 dark:hover:bg-opacity-50"
                         }
@@ -182,7 +182,7 @@ const Guias = () => {
       },
     },
     {
-      name: "Borrar",
+      name: "Desactivar",
       icon: "heroicons-outline:trash",
       ActionToDo: (id) => {
         //console.log("Borrar"+id);
